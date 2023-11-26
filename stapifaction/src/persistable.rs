@@ -43,22 +43,45 @@ pub trait CompoundPersistable {
     fn subsets(&self) -> HashMap<PathBuf, Box<dyn ErasedSerialize>>;
 }
 
-impl dyn CompoundPersistable {
-    pub fn persist<P: Persister>(&self, persister: &P) {
-        for subset in self.subsets() {
-            let path = self.path().join(self.id());
+#[cfg(test)]
+mod tests {
+    use std::{
+        ffi::OsString,
+        path::{Path, PathBuf},
+    };
 
-            let path = if let Some(sub_path) = subset.path() {
-                path.join(sub_path)
-            } else {
-                path
-            };
+    use serde::Serialize;
 
-            persister.persist(path, subset.as_ref())
+    use crate::{PersistableEntity, Persister};
+
+    use super::Persistable;
+
+    #[derive(Serialize)]
+    struct Person;
+
+    struct AssertPathPersister(PathBuf);
+
+    impl PersistableEntity for Person {
+        fn id(&self) -> OsString {
+            "1".parse().unwrap()
+        }
+
+        fn path(&self) -> PathBuf {
+            "persons".parse().unwrap()
         }
     }
+
+    impl Persister for AssertPathPersister {
+        fn persist(&self, path: &Path, _serializable: &(impl erased_serde::Serialize + ?Sized)) {
+            assert_eq!(self.0, path)
+        }
     }
 
-pub trait PersistableSubset: Serialize {
-    fn path(&self) -> Option<PathBuf>;
+    #[test]
+    fn test_persistable_entity_path() {
+        let persistable = Persistable::from_entity(Person);
+        let persister = AssertPathPersister("persons/1".parse().unwrap());
+
+        persistable.persist(&persister);
+    }
 }
