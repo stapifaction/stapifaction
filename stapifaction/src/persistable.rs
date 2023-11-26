@@ -1,11 +1,35 @@
-use std::{ffi::OsString, path::PathBuf};
+use std::{collections::HashMap, ffi::OsString, path::PathBuf};
 
-use erased_serde::Serialize;
+use erased_serde::Serialize as ErasedSerialize;
+use serde::Serialize;
 
 use crate::Persister;
 
-pub trait Persistable {
-    fn serializables(&self) -> Vec<(PathBuf, Box<dyn Serialize>)>;
+pub struct Persistable {
+    subsets: HashMap<PathBuf, Box<dyn ErasedSerialize>>,
+}
+
+impl Persistable {
+    pub fn from_entity(entity: impl PersistableEntity + 'static) -> Self {
+        Self {
+            subsets: HashMap::from([(
+                entity.path().join(entity.id()),
+                Box::new(entity) as Box<dyn ErasedSerialize>,
+            )]),
+        }
+    }
+
+    pub fn from_compound(compound: impl CompoundPersistable + 'static) -> Self {
+        Self {
+            subsets: compound.subsets(),
+        }
+    }
+
+    pub fn persist<P: Persister>(&self, persister: &P) {
+        for (path, subset) in &self.subsets {
+            persister.persist(path, &subset)
+        }
+    }
 }
 
 pub trait PersistableEntity: Serialize {
@@ -13,16 +37,10 @@ pub trait PersistableEntity: Serialize {
     fn path(&self) -> PathBuf;
 }
 
-impl dyn PersistableEntity {
-    pub fn persist<P: Persister>(&self, persister: &P) {
-        persister.persist(self.path().join(self.id()), self)
-    }
-}
-
 pub trait CompoundPersistable {
     fn id(&self) -> OsString;
     fn path(&self) -> PathBuf;
-    fn subsets(&self) -> Vec<Box<dyn PersistableSubset>>;
+    fn subsets(&self) -> HashMap<PathBuf, Box<dyn ErasedSerialize>>;
 }
 
 impl dyn CompoundPersistable {
@@ -39,7 +57,7 @@ impl dyn CompoundPersistable {
             persister.persist(path, subset.as_ref())
         }
     }
-}
+    }
 
 pub trait PersistableSubset: Serialize {
     fn path(&self) -> Option<PathBuf>;
