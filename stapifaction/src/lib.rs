@@ -1,5 +1,5 @@
 mod persistable;
 mod persister;
 
-pub use persistable::{CompoundPersistable, Persistable, PersistableEntity};
+pub use persistable::Persistable;
 pub use persister::Persister;
