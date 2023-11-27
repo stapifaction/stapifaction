@@ -56,13 +56,17 @@ impl ToTokens for PersistableInputReceiver {
                 }
 
                 impl stapifaction::Persistable for #ident {
+                    fn path() -> std::path::PathBuf {
+                        #path.parse().unwrap()
+                    }
+
                     fn subsets<'a>(
                         &'a self,
                     ) -> std::collections::HashMap<std::path::PathBuf, Box<dyn stapifaction::serde::ErasedSerialize + 'a>>
                     {
                         let container = #container_ident { entity: self };
                         std::collections::HashMap::from([(
-                            [#path, &format!("{}", self.#id_ident)].iter().collect(),
+                            format!("{}", self.#id_ident).into(),
                             Box::new(container) as Box<dyn stapifaction::serde::ErasedSerialize>,
                         )])
                     }
