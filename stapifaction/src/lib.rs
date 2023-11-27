@@ -1,5 +1,7 @@
 mod persistable;
-mod persister;
+
+#[cfg(feature = "json")]
+pub mod json;
 
 pub use persistable::Persistable;
 
