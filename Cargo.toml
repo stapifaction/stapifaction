@@ -1,0 +1,4 @@
+[workspace]
+members = ["stapifaction", "stapifaction_derive"]
+
+resolver = "2"
