@@ -3,9 +3,9 @@ use std::{collections::HashSet, hash::Hash};
 use darling::{FromDeriveInput, FromField};
 use itertools::Itertools;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, quote_spanned};
+use quote::{format_ident, quote};
 use serde_derive_internals::ast::{Container, Data};
-use syn::{Ident, Member, Type, TypePath};
+use syn::{Ident, Member, Type};
 
 pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
     let Container {
@@ -20,11 +20,6 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
     let ident_str = ident.to_string();
     let container_ident = format_ident!("{}Container", ident);
 
-    let path = match path {
-        Some(path) => quote! { Some(String::from(#path).into()) },
-        None => quote! { None},
-    };
-
     if let Data::Struct(_, fields) = data {
         let fields = fields
             .into_iter()
@@ -38,9 +33,11 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
 
         let id = main_set.iter().find(|(_, f)| f.id).map(|(f, _)| &f.member);
 
-        let id_ident = match &id {
-            Some(id) => quote! { Some(format!("{}", self.#id).into()) },
-            None => quote! { None },
+        let path = match (path, id) {
+            (Some(path), Some(id)) => quote! { Some(format!("{}/{}", #path, self.#id).into()) },
+            (Some(path), None) => quote! { Some(String::from(#path).into()) },
+            (None, Some(id)) => quote! { Some(format!("{}", self.#id).into()) },
+            _ => quote! { None },
         };
 
         let fields_count = main_set.len();
@@ -53,20 +50,19 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
             })
             .multiunzip::<(Vec<_>, Vec<_>)>();
 
-        let (subset_idents_str, subset_path_buf, subset_container_idents, subset_idents) = subsets
+        let (subset_idents_str, subset_path_buf, subset_idents) = subsets
             .iter()
             .filter(|(f, _)| !f.attrs.skip_serializing())
             .filter_map(|(f, _)| match &f.member {
                 Member::Named(ident) => Some((
                     f.attrs.name().serialize_name(),
-                    build_subset_path_buf(&id, f.attrs.name().serialize_name()),
-                    format_ident!("{}Container", type_ident(f.ty).unwrap()),
+                    build_subset_path_buf(f.attrs.name().serialize_name()),
                     ident,
                 )),
                 Member::Unnamed(_) => None,
             })
-            .sorted_by(|(a, _, _, _), (b, _, _, _)| a.cmp(b))
-            .multiunzip::<(Vec<_>, Vec<_>, Vec<_>, Vec<_>)>();
+            .sorted_by(|(a, _, _), (b, _, _)| a.cmp(b))
+            .multiunzip::<(Vec<_>, Vec<_>, Vec<_>)>();
 
         let duplicated_subsets = collect_duplicates(&subset_idents_str);
 
@@ -96,20 +92,23 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
             }
 
             impl stapifaction::Persistable for #ident {
-                fn path() -> Option<std::path::PathBuf> {
-                    #path
+                fn serializable_entity<'e>(&'e self) -> (Option<std::path::PathBuf>, Box<dyn stapifaction::serde::ErasedSerialize + 'e>) {
+                    let container = #container_ident { entity: self };
+
+                    (#path, Box::new(container) as Box<dyn stapifaction::serde::ErasedSerialize>)
                 }
 
-                fn subsets<'a>(
-                    &'a self,
-                ) -> std::collections::HashMap<Option<std::path::PathBuf>, Box<dyn stapifaction::serde::ErasedSerialize + 'a>>
+                fn subsets(&self) -> std::collections::HashMap<Option<std::path::PathBuf>, Box<stapifaction::Subset>>
                 {
-                    let container = #container_ident { entity: self };
                     let mut map = std::collections::HashMap::new();
 
-                    map.insert(#id_ident, Box::new(container) as Box<dyn stapifaction::serde::ErasedSerialize>);
-
-                    #( map.insert(Some(#subset_path_buf), Box::new(#subset_container_idents { entity: &self.#subset_idents}) as Box<dyn stapifaction::serde::ErasedSerialize>); )*
+                    #(
+                        map.insert(Some(#subset_path_buf),
+                            Box::new(
+                                stapifaction::Subset::new(&self.#subset_idents)
+                            )
+                        );
+                    )*
 
                     map
                 }
@@ -132,21 +131,8 @@ where
         .collect()
 }
 
-fn type_ident(ty: &Type) -> Option<Ident> {
-    if let Type::Path(type_path) = ty {
-        type_path.path.segments.last().map(|s| s.ident.clone())
-    } else {
-        None
-    }
-}
-
-fn build_subset_path_buf(id: &Option<&Member>, subset_name: &str) -> TokenStream {
-    match id {
-        Some(id) => {
-            quote! { std::path::PathBuf::from(format!("{}/{}", self.#id, #subset_name))}
-        }
-        None => quote! { std::path::PathBuf::from(#subset_name) },
-    }
+fn build_subset_path_buf(subset_name: &str) -> TokenStream {
+    quote! { std::path::PathBuf::from(#subset_name) }
 }
 
 #[derive(Debug, FromDeriveInput)]
@@ -164,6 +150,8 @@ pub struct PersistableField {
     pub id: bool,
     #[darling(default)]
     pub subset: bool,
+    #[darling(default)]
+    pub collection: bool,
 }
 
 #[cfg(test)]
