@@ -3,7 +3,7 @@ mod persistable;
 #[cfg(feature = "json")]
 pub mod json;
 
-pub use persistable::{Persistable, Subset};
+pub use persistable::{Child, Persistable};
 
 #[cfg(feature = "derive")]
 pub use stapifaction_derive::Persistable;

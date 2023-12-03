@@ -1,40 +1,60 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{borrow::Cow, path::PathBuf};
 
 use erased_serde::Serialize as ErasedSerialize;
 
 pub trait Persistable {
-    fn serializable_entity<'e>(&'e self) -> (Option<PathBuf>, Box<dyn ErasedSerialize + 'e>);
-    fn subsets(&self) -> HashMap<Option<PathBuf>, Box<Subset>>;
+    fn path(&self) -> Option<PathBuf>;
+    fn serializable_entity<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>>;
+    fn children<'e>(
+        &'e self,
+    ) -> Box<dyn Iterator<Item = (Option<PathBuf>, Cow<'e, Child<'e>>)> + 'e>;
 }
 
-impl<T: Persistable> Persistable for &T {
-    fn serializable_entity<'e>(&'e self) -> (Option<PathBuf>, Box<dyn ErasedSerialize + 'e>) {
-        (*self).serializable_entity()
+#[derive(Clone)]
+pub enum Child<'a> {
+    Subset(&'a dyn Persistable),
+    Collection(Box<[Child<'a>]>),
+}
+
+impl<'a> Child<'a> {
+    pub fn subset<P: Persistable>(subset: &'a P) -> Self {
+        Self::Subset(subset)
     }
 
-    fn subsets(&self) -> HashMap<Option<PathBuf>, Box<Subset>> {
-        (*self).subsets()
+    pub fn collection<I, P>(collection: I) -> Self
+    where
+        I: Iterator<Item = &'a P> + 'a,
+        P: Persistable + 'a,
+    {
+        Self::Collection(collection.map(Child::subset).collect())
     }
 }
 
-pub struct Subset<'a> {
-    subset: Box<dyn Persistable + 'a>,
-}
-
-impl<'a> Subset<'a> {
-    pub fn new<T: Persistable + 'a>(subset: T) -> Self {
-        Self {
-            subset: Box::new(subset),
+impl<'a> Persistable for Child<'a> {
+    fn path(&self) -> Option<PathBuf> {
+        match self {
+            Child::Subset(subset) => subset.path(),
+            Child::Collection(_) => None,
         }
     }
-}
 
-impl<'a> Persistable for Subset<'a> {
-    fn serializable_entity<'e>(&'e self) -> (Option<PathBuf>, Box<dyn ErasedSerialize + 'e>) {
-        self.subset.serializable_entity()
+    fn serializable_entity<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>> {
+        match self {
+            Child::Subset(subset) => subset.serializable_entity(),
+            Child::Collection(_) => None,
+        }
     }
 
-    fn subsets(&self) -> HashMap<Option<PathBuf>, Box<Subset>> {
-        self.subset.subsets()
+    fn children<'e>(
+        &'e self,
+    ) -> Box<dyn Iterator<Item = (Option<PathBuf>, Cow<'e, Child<'e>>)> + 'e> {
+        match self {
+            Child::Subset(subset) => subset.children(),
+            Child::Collection(collection) => {
+                Box::new(collection.iter().enumerate().map(|(index, child)| {
+                    (Some(PathBuf::from(index.to_string())), Cow::Borrowed(child))
+                }))
+            }
+        }
     }
 }

@@ -10,7 +10,7 @@ use crate::Persistable;
 
 pub trait ToJson: Persistable {
     fn to_json<P: AsRef<Path>>(&self, base_path: P) -> Result<()> {
-        let (entity_path, serializable_entity) = self.serializable_entity();
+        let entity_path = self.path();
 
         let entity_path = entity_path
             .map(|p| base_path.as_ref().join(p))
@@ -18,14 +18,16 @@ pub trait ToJson: Persistable {
 
         fs::create_dir_all(&entity_path)?;
 
-        serialize_file(entity_path.join("index.json"), serializable_entity)?;
+        if let Some(serializable_entity) = self.serializable_entity() {
+            serialize_file(entity_path.join("index.json"), serializable_entity)?;
+        }
 
-        for (path, subset) in self.subsets() {
-            let subset_path = path
+        for (path, child) in self.children() {
+            let child_path = path
                 .map(|p| entity_path.join(p))
                 .unwrap_or(entity_path.clone());
 
-            ToJson::to_json(&*subset, subset_path)?;
+            ToJson::to_json(child.as_ref(), child_path)?;
         }
 
         Ok(())

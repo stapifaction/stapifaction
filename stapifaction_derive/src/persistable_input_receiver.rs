@@ -1,6 +1,6 @@
-use std::{collections::HashSet, hash::Hash};
+use std::{borrow::Cow, collections::HashSet, hash::Hash};
 
-use darling::{FromDeriveInput, FromField};
+use darling::{util::Override, FromDeriveInput, FromField, FromMeta};
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
@@ -29,7 +29,14 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
 
-        let (subsets, main_set) = fields.into_iter().partition::<Vec<_>, _>(|(_, f)| f.subset);
+        let (main_set, others) = fields
+            .into_iter()
+            .filter(|(f, _)| !f.attrs.skip_serializing())
+            .partition::<Vec<_>, _>(|(_, f)| f.expand().is_none());
+
+        let (subsets, collections) = others
+            .into_iter()
+            .partition::<Vec<_>, _>(|(_, f)| matches!(*f.expand().unwrap(), Expand::Subset));
 
         let id = main_set.iter().find(|(_, f)| f.id).map(|(f, _)| &f.member);
 
@@ -43,7 +50,6 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
         let fields_count = main_set.len();
         let (field_idents_str, field_idents) = main_set
             .iter()
-            .filter(|(f, _)| !f.attrs.skip_serializing())
             .filter_map(|(f, _)| match &f.member {
                 Member::Named(ident) => Some((f.attrs.name().serialize_name(), ident)),
                 Member::Unnamed(_) => None,
@@ -52,11 +58,10 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
 
         let (subset_idents_str, subset_path_buf, subset_idents) = subsets
             .iter()
-            .filter(|(f, _)| !f.attrs.skip_serializing())
             .filter_map(|(f, _)| match &f.member {
                 Member::Named(ident) => Some((
                     f.attrs.name().serialize_name(),
-                    build_subset_path_buf(f.attrs.name().serialize_name()),
+                    build_path_buf(f.attrs.name().serialize_name()),
                     ident,
                 )),
                 Member::Unnamed(_) => None,
@@ -72,6 +77,19 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
                 duplicated_subsets.into_iter().join(", ")
             );
         }
+
+        let (collection_idents_str, collection_path_buf, collection_idents) = collections
+            .iter()
+            .filter_map(|(f, _)| match &f.member {
+                Member::Named(ident) => Some((
+                    f.attrs.name().serialize_name(),
+                    build_path_buf(f.attrs.name().serialize_name()),
+                    ident,
+                )),
+                Member::Unnamed(_) => None,
+            })
+            .sorted_by(|(a, _, _), (b, _, _)| a.cmp(b))
+            .multiunzip::<(Vec<_>, Vec<_>, Vec<_>)>();
 
         quote! {
             struct #container_ident<'a> {
@@ -92,25 +110,32 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
             }
 
             impl stapifaction::Persistable for #ident {
-                fn serializable_entity<'e>(&'e self) -> (Option<std::path::PathBuf>, Box<dyn stapifaction::serde::ErasedSerialize + 'e>) {
+                fn path(&self) -> Option<std::path::PathBuf> {
+                    #path
+                }
+                fn serializable_entity<'e>(&'e self) -> Option<Box<dyn stapifaction::serde::ErasedSerialize + 'e>> {
                     let container = #container_ident { entity: self };
 
-                    (#path, Box::new(container) as Box<dyn stapifaction::serde::ErasedSerialize>)
+                    Some(Box::new(container) as Box<dyn stapifaction::serde::ErasedSerialize>)
                 }
 
-                fn subsets(&self) -> std::collections::HashMap<Option<std::path::PathBuf>, Box<stapifaction::Subset>>
+                fn children<'e>(&'e self) -> Box<dyn Iterator<Item = (Option<std::path::PathBuf>, std::borrow::Cow<'e, stapifaction::Child<'e>>)> + 'e>
                 {
                     let mut map = std::collections::HashMap::new();
 
                     #(
                         map.insert(Some(#subset_path_buf),
-                            Box::new(
-                                stapifaction::Subset::new(&self.#subset_idents)
-                            )
+                         std::borrow::Cow::Owned(stapifaction::Child::subset(&self.#subset_idents))
                         );
                     )*
 
-                    map
+                    #(
+                        map.insert(Some(#collection_path_buf),
+                            std::borrow::Cow::Owned(stapifaction::Child::collection(self.#collection_idents.iter()))
+                        );
+                    )*
+
+                    Box::new(map.into_iter())
                 }
             }
         }
@@ -131,8 +156,8 @@ where
         .collect()
 }
 
-fn build_subset_path_buf(subset_name: &str) -> TokenStream {
-    quote! { std::path::PathBuf::from(#subset_name) }
+fn build_path_buf(path: &str) -> TokenStream {
+    quote! { std::path::PathBuf::from(#path) }
 }
 
 #[derive(Debug, FromDeriveInput)]
@@ -148,10 +173,27 @@ pub struct PersistableField {
     pub ty: Type,
     #[darling(default)]
     pub id: bool,
-    #[darling(default)]
-    pub subset: bool,
-    #[darling(default)]
-    pub collection: bool,
+    pub expand: Option<Override<Expand>>,
+}
+
+impl PersistableField {
+    pub fn expand(&self) -> Option<Cow<'_, Expand>> {
+        match &self.expand {
+            Some(expand) => match expand {
+                Override::Explicit(value) => Some(Cow::Borrowed(value)),
+                Override::Inherit => Some(Cow::Owned(Expand::Subset)),
+            },
+            None => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, FromMeta)]
+#[darling(default)]
+pub enum Expand {
+    #[default]
+    Subset,
+    All,
 }
 
 #[cfg(test)]
