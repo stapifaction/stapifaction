@@ -1,8 +1,6 @@
-use std::{borrow::Cow, fs, path::PathBuf};
+use std::{borrow::Cow, path::PathBuf};
 
-use crate::persister::Persister;
 use erased_serde::Serialize as ErasedSerialize;
-use eyre::Result;
 
 pub trait Persistable {
     fn path(&self) -> Option<PathBuf>;
