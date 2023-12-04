@@ -1,9 +1,8 @@
 mod persistable;
-
-#[cfg(feature = "json")]
-pub mod json;
+mod persister;
 
 pub use persistable::{Child, Persistable};
+pub use persister::*;
 
 #[cfg(feature = "derive")]
 pub use stapifaction_derive::Persistable;

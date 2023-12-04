@@ -1,6 +1,8 @@
-use std::{borrow::Cow, path::PathBuf};
+use std::{borrow::Cow, fs, path::PathBuf};
 
+use crate::persister::Persister;
 use erased_serde::Serialize as ErasedSerialize;
+use eyre::Result;
 
 pub trait Persistable {
     fn path(&self) -> Option<PathBuf>;
@@ -52,7 +54,12 @@ impl<'a> Persistable for Child<'a> {
             Child::Subset(subset) => subset.children(),
             Child::Collection(collection) => {
                 Box::new(collection.iter().enumerate().map(|(index, child)| {
-                    (Some(PathBuf::from(index.to_string())), Cow::Borrowed(child))
+                    let path = match child.path() {
+                        Some(path) => path,
+                        None => PathBuf::from(index.to_string()),
+                    };
+
+                    (Some(path), Cow::Borrowed(child))
                 }))
             }
         }
