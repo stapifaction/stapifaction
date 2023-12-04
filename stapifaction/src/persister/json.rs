@@ -1,4 +1,7 @@
-use std::{fs::File, path::Path};
+use std::{
+    fs::{self, File},
+    path::Path,
+};
 
 use erased_serde::Serialize;
 use eyre::{Context, Result};
@@ -11,6 +14,8 @@ pub struct JsonPersister;
 
 impl Persister for JsonPersister {
     fn write<'a>(&self, path: &Path, serializable: Box<dyn Serialize + 'a>) -> Result<()> {
+        fs::create_dir_all(&path)?;
+
         let file_path = path.join("index.json");
 
         let file = File::create(&file_path)
