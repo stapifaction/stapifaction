@@ -56,18 +56,21 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
             })
             .multiunzip::<(Vec<_>, Vec<_>)>();
 
-        let (subset_idents_str, subset_path_buf, subset_idents) = subsets
+        let (subset_idents_str, subsets) = subsets
             .iter()
             .filter_map(|(f, _)| match &f.member {
                 Member::Named(ident) => Some((
                     f.attrs.name().serialize_name(),
-                    build_path_buf(f.attrs.name().serialize_name()),
-                    ident,
+                    (
+                        build_path_buf(f.attrs.name().serialize_name()),
+                        ident,
+                        is_option(f.ty),
+                    ),
                 )),
                 Member::Unnamed(_) => None,
             })
-            .sorted_by(|(a, _, _), (b, _, _)| a.cmp(b))
-            .multiunzip::<(Vec<_>, Vec<_>, Vec<_>)>();
+            .sorted_by(|(a, _), (b, _)| a.cmp(b))
+            .multiunzip::<(Vec<_>, Vec<_>)>();
 
         let duplicated_subsets = collect_duplicates(&subset_idents_str);
 
@@ -77,6 +80,20 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
                 duplicated_subsets.into_iter().join(", ")
             );
         }
+
+        let (optional_subsets, subsets) = subsets
+            .into_iter()
+            .partition::<Vec<_>, _>(|(_, _, is_option)| *is_option);
+
+        let (subset_path_buf, subset_idents) = subsets
+            .into_iter()
+            .map(|(subset_path_buf, subset_idents, _)| (subset_path_buf, subset_idents))
+            .unzip::<_, _, Vec<_>, Vec<_>>();
+
+        let (optional_subset_path_buf, optional_subset_idents) = optional_subsets
+            .into_iter()
+            .map(|(subset_path_buf, subset_idents, _)| (subset_path_buf, subset_idents))
+            .unzip::<_, _, Vec<_>, Vec<_>>();
 
         let (collection_idents_str, collection_path_buf, collection_idents) = collections
             .iter()
@@ -90,6 +107,15 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
             })
             .sorted_by(|(a, _, _), (b, _, _)| a.cmp(b))
             .multiunzip::<(Vec<_>, Vec<_>, Vec<_>)>();
+
+        let duplicated_collections = collect_duplicates(&collection_idents_str);
+
+        if !duplicated_collections.is_empty() {
+            panic!(
+                "The following collections are duplicated: {}",
+                duplicated_collections.into_iter().join(", ")
+            );
+        }
 
         quote! {
             struct #container_ident<'a> {
@@ -130,6 +156,14 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
                     )*
 
                     #(
+                        if let Some(subset) = &self.#optional_subset_idents {
+                            map.insert(Some(#optional_subset_path_buf),
+                                std::borrow::Cow::Owned(stapifaction::Child::subset(subset))
+                            );
+                        }
+                    )*
+
+                    #(
                         map.insert(Some(#collection_path_buf),
                             std::borrow::Cow::Owned(stapifaction::Child::collection(self.#collection_idents.iter()))
                         );
@@ -158,6 +192,18 @@ where
 
 fn build_path_buf(path: &str) -> TokenStream {
     quote! { std::path::PathBuf::from(#path) }
+}
+
+fn is_option(ty: &Type) -> bool {
+    match ty {
+        Type::Path(type_path) => type_path
+            .path
+            .segments
+            .last()
+            .map(|s| s.ident == "Option")
+            .unwrap_or_default(),
+        _ => false,
+    }
 }
 
 #[derive(Debug, FromDeriveInput)]
