@@ -6,19 +6,26 @@ use std::path::{Path, PathBuf};
 use erased_serde::Serialize;
 use eyre::Result;
 
-use crate::Persistable;
+use crate::{PathResolveStrategy, Persistable};
 
 pub trait Persister {
-    fn write<'a>(
+    fn resolve_path(
         &self,
         parent_path: &Path,
         entity_name: Option<PathBuf>,
-        serializable: Box<dyn Serialize + 'a>,
-    ) -> Result<()>;
+        strategy: PathResolveStrategy,
+    ) -> PathBuf;
+
+    fn write<'a>(&self, path: &Path, serializable: Box<dyn Serialize + 'a>) -> Result<()>;
 
     fn persist<P: AsRef<Path>, T: Persistable>(&self, base_path: P, persistable: &T) -> Result<()> {
         if let Some(serializable_entity) = persistable.serializable_entity() {
-            self.write(base_path.as_ref(), persistable.path(), serializable_entity)?;
+            let path = self.resolve_path(
+                base_path.as_ref(),
+                persistable.path(),
+                persistable.path_resolve_strategy(),
+            );
+            self.write(&path, serializable_entity)?;
         }
 
         for (path, child) in persistable.children() {

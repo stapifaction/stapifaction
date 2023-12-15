@@ -1,6 +1,8 @@
+mod path_resolve_strategy;
 mod persistable;
 mod persister;
 
+pub use path_resolve_strategy::PathResolveStrategy;
 pub use persistable::{Child, Persistable};
 pub use persister::*;
 

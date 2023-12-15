@@ -139,6 +139,11 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
                 fn path(&self) -> Option<std::path::PathBuf> {
                     #path
                 }
+
+                fn path_resolve_strategy(&self) -> stapifaction::PathResolveStrategy {
+                    stapifaction::PathResolveStrategy::SubsetsInSeparateFolders
+                }
+
                 fn serializable_entity<'e>(&'e self) -> Option<Box<dyn stapifaction::serde::ErasedSerialize + 'e>> {
                     let container = #container_ident { entity: self };
 
