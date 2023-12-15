@@ -1,6 +1,6 @@
 use std::{
     fs::{self, File},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use erased_serde::Serialize;
@@ -13,10 +13,17 @@ use super::Persister;
 pub struct JsonPersister;
 
 impl Persister for JsonPersister {
-    fn write<'a>(&self, path: &Path, serializable: Box<dyn Serialize + 'a>) -> Result<()> {
-        fs::create_dir_all(&path)?;
+    fn write<'a>(
+        &self,
+        parent_path: &Path,
+        entity_name: Option<PathBuf>,
+        serializable: Box<dyn Serialize + 'a>,
+    ) -> Result<()> {
+        fs::create_dir_all(&parent_path)?;
 
-        let file_path = path.join("index.json");
+        let file_path = parent_path
+            .join(entity_name.unwrap_or_default())
+            .join("index.json");
 
         let file = File::create(&file_path)
             .wrap_err_with(|| format!("Failed to create file '{}'", file_path.display()))?;
