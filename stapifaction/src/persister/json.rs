@@ -6,30 +6,40 @@ use std::{
 use erased_serde::Serialize;
 use eyre::{Context, Result};
 
-use crate::Persistable;
+use crate::{PathResolveStrategy, Persistable};
 
 use super::Persister;
 
 pub struct JsonPersister;
 
 impl Persister for JsonPersister {
-    fn write<'a>(
+    fn resolve_path(
         &self,
         parent_path: &Path,
         entity_name: Option<PathBuf>,
-        serializable: Box<dyn Serialize + 'a>,
-    ) -> Result<()> {
-        fs::create_dir_all(&parent_path)?;
+        strategy: PathResolveStrategy,
+    ) -> PathBuf {
+        let mut path = parent_path.join(entity_name.unwrap_or_default());
 
-        let file_path = parent_path
-            .join(entity_name.unwrap_or_default())
-            .join("index.json");
+        if matches!(strategy, PathResolveStrategy::SubsetsInSeparateFolders) {
+            path.push("index.json");
+        } else {
+            path.set_extension("json");
+        }
 
-        let file = File::create(&file_path)
-            .wrap_err_with(|| format!("Failed to create file '{}'", file_path.display()))?;
+        path
+    }
+
+    fn write<'a>(&self, path: &Path, serializable: Box<dyn Serialize + 'a>) -> Result<()> {
+        if let Some(parent_path) = path.parent() {
+            fs::create_dir_all(parent_path)?;
+        }
+
+        let file = File::create(&path)
+            .wrap_err_with(|| format!("Failed to create file '{}'", path.display()))?;
 
         serde_json::to_writer(file, &serializable)
-            .wrap_err_with(|| format!("Failed serialize element '{:?}'", file_path))?;
+            .wrap_err_with(|| format!("Failed serialize element '{:?}'", path))?;
 
         Ok(())
     }
