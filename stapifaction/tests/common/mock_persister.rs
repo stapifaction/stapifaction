@@ -41,7 +41,14 @@ impl MockPersister {
 }
 
 impl Persister for MockPersister {
-    fn write<'a>(&self, path: &Path, _serializable: Box<dyn Serialize + 'a>) -> Result<()> {
+    fn write<'a>(
+        &self,
+        parent_path: &Path,
+        entity_name: Option<PathBuf>,
+        _serializable: Box<dyn Serialize + 'a>,
+    ) -> Result<()> {
+        let path = parent_path.join(entity_name.unwrap_or_default());
+
         if !self.paths.write().unwrap().insert(path.to_owned()) {
             panic!("The path '{}' has been added twice", path.display())
         }
