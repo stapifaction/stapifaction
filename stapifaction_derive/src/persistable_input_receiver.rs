@@ -7,13 +7,13 @@ use quote::{format_ident, quote};
 use serde_derive_internals::ast::{Container, Data};
 use syn::{Ident, Member, Type};
 
-pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
+pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
     let Container {
         ident,
         data,
         original,
         ..
-    } = serde_contrainer;
+    } = serde_container;
     let PersistableInputReceiver { path } =
         PersistableInputReceiver::from_derive_input(original).unwrap();
 
@@ -140,8 +140,8 @@ pub fn expand_derive_persistable(serde_contrainer: Container) -> TokenStream {
                     #path
                 }
 
-                fn path_resolve_strategy(&self) -> stapifaction::PathResolveStrategy {
-                    stapifaction::PathResolveStrategy::SubsetsInSeparateFolders
+                fn expand_strategy(&self) -> stapifaction::ExpandStrategy {
+                    stapifaction::ExpandStrategy::SubsetsInSeparateFolders
                 }
 
                 fn serializable_entity<'e>(&'e self) -> Option<Box<dyn stapifaction::serde::ErasedSerialize + 'e>> {

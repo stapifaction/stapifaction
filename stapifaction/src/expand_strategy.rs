@@ -1,4 +1,4 @@
-pub enum PathResolveStrategy {
+pub enum ExpandStrategy {
     SubsetsInSeparateFolders,
     SubsetsGroupedInTheSameFolder,
     IdAsFileName,

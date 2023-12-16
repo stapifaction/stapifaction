@@ -6,7 +6,7 @@ use std::{
 use erased_serde::Serialize;
 use eyre::{Context, Result};
 
-use crate::{PathResolveStrategy, Persistable};
+use crate::{ExpandStrategy, Persistable};
 
 use super::Persister;
 
@@ -17,11 +17,11 @@ impl Persister for JsonPersister {
         &self,
         parent_path: &Path,
         entity_name: Option<PathBuf>,
-        strategy: PathResolveStrategy,
+        strategy: ExpandStrategy,
     ) -> PathBuf {
         let mut path = parent_path.join(entity_name.unwrap_or_default());
 
-        if matches!(strategy, PathResolveStrategy::SubsetsInSeparateFolders) {
+        if matches!(strategy, ExpandStrategy::SubsetsInSeparateFolders) {
             path.push("index.json");
         } else {
             path.set_extension("json");
