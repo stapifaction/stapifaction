@@ -2,11 +2,11 @@ use std::{borrow::Cow, path::PathBuf};
 
 use erased_serde::Serialize as ErasedSerialize;
 
-use crate::PathResolveStrategy;
+use crate::ExpandStrategy;
 
 pub trait Persistable {
     fn path(&self) -> Option<PathBuf>;
-    fn path_resolve_strategy(&self) -> PathResolveStrategy;
+    fn expand_strategy(&self) -> ExpandStrategy;
     fn serializable_entity<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>>;
     fn children<'e>(
         &'e self,
@@ -41,10 +41,10 @@ impl<'a> Persistable for Child<'a> {
         }
     }
 
-    fn path_resolve_strategy(&self) -> PathResolveStrategy {
+    fn expand_strategy(&self) -> ExpandStrategy {
         match self {
-            Child::Subset(subset) => subset.path_resolve_strategy(),
-            Child::Collection(_) => PathResolveStrategy::IdAsFileName,
+            Child::Subset(subset) => subset.expand_strategy(),
+            Child::Collection(_) => ExpandStrategy::IdAsFileName,
         }
     }
 

@@ -6,7 +6,7 @@ use std::{
 
 use erased_serde::Serialize;
 use eyre::Result;
-use stapifaction::{PathResolveStrategy, Persister};
+use stapifaction::{ExpandStrategy, Persister};
 
 pub struct MockPersister {
     paths: RwLock<HashSet<PathBuf>>,
@@ -45,7 +45,7 @@ impl Persister for MockPersister {
         &self,
         parent_path: &Path,
         entity_name: Option<PathBuf>,
-        _strategy: PathResolveStrategy,
+        _strategy: ExpandStrategy,
     ) -> PathBuf {
         parent_path.join(entity_name.unwrap_or_default())
     }
