@@ -164,26 +164,26 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
                     Some(Box::new(container) as Box<dyn stapifaction::serde::ErasedSerialize>)
                 }
 
-                fn children<'e>(&'e self) -> Box<dyn Iterator<Item = (Option<std::path::PathBuf>, std::borrow::Cow<'e, stapifaction::Child<'e>>)> + 'e>
+                fn children<'e>(&'e self) -> Box<dyn Iterator<Item = (std::path::PathBuf, std::borrow::Cow<'e, stapifaction::Child<'e>>)> + 'e>
                 {
                     let mut map = std::collections::HashMap::new();
 
                     #(
-                        map.insert(Some(#subset_path_buf),
+                        map.insert(#subset_path_buf,
                          std::borrow::Cow::Owned(stapifaction::Child::subset(&self.#subset_idents))
                         );
                     )*
 
                     #(
                         if let Some(subset) = &self.#optional_subset_idents {
-                            map.insert(Some(#optional_subset_path_buf),
+                            map.insert(#optional_subset_path_buf,
                                 std::borrow::Cow::Owned(stapifaction::Child::subset(subset))
                             );
                         }
                     )*
 
                     #(
-                        map.insert(Some(#collection_path_buf),
+                        map.insert(#collection_path_buf,
                             std::borrow::Cow::Owned(stapifaction::Child::collection(self.#collection_idents.iter()))
                         );
                     )*
