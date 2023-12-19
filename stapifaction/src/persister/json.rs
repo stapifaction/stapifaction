@@ -19,13 +19,9 @@ impl Persister for JsonPersister {
         entity_name: Option<PathBuf>,
         strategy: ExpandStrategy,
     ) -> PathBuf {
-        let mut path = parent_path.join(entity_name.unwrap_or_default());
+        let mut path = strategy.resolve_path(parent_path, entity_name);
 
-        if matches!(strategy, ExpandStrategy::SubsetsInSeparateFolders) {
-            path.push("index.json");
-        } else {
-            path.set_extension("json");
-        }
+        path.set_extension("json");
 
         path
     }

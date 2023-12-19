@@ -14,8 +14,10 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
         original,
         ..
     } = serde_container;
-    let PersistableInputReceiver { path } =
-        PersistableInputReceiver::from_derive_input(original).unwrap();
+    let PersistableInputReceiver {
+        path,
+        expand_strategy,
+    } = PersistableInputReceiver::from_derive_input(original).unwrap();
 
     let ident_str = ident.to_string();
     let container_ident = format_ident!("{}Container", ident);
@@ -45,6 +47,18 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
             (Some(path), None) => quote! { Some(String::from(#path).into()) },
             (None, Some(id)) => quote! { Some(format!("{}", self.#id).into()) },
             _ => quote! { None },
+        };
+
+        let expand_strategy = match expand_strategy {
+            ExpandStrategy::SeparateFolders => {
+                quote! { stapifaction::ExpandStrategy::SubsetsInSeparateFolders(format!("index")) }
+            }
+            ExpandStrategy::SameFolder => {
+                quote! { stapifaction::ExpandStrategy::SubsetsGroupedInUniqueFolder(format!("data")) }
+            }
+            ExpandStrategy::IdOnly => {
+                quote! { stapifaction::ExpandStrategy::IdAsFileName }
+            }
         };
 
         let fields_count = main_set.len();
@@ -141,7 +155,7 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
                 }
 
                 fn expand_strategy(&self) -> stapifaction::ExpandStrategy {
-                    stapifaction::ExpandStrategy::SubsetsInSeparateFolders
+                    #expand_strategy
                 }
 
                 fn serializable_entity<'e>(&'e self) -> Option<Box<dyn stapifaction::serde::ErasedSerialize + 'e>> {
@@ -215,6 +229,8 @@ fn is_option(ty: &Type) -> bool {
 #[darling(attributes(persistable), supports(struct_any))]
 pub struct PersistableInputReceiver {
     pub path: Option<String>,
+    #[darling(default)]
+    pub expand_strategy: ExpandStrategy,
 }
 
 #[derive(Debug, FromField)]
@@ -245,6 +261,16 @@ pub enum Expand {
     #[default]
     Subset,
     All,
+}
+
+#[derive(Debug, Clone, Copy, Default, FromMeta)]
+#[darling(default)]
+#[darling(rename_all = "kebab-case")]
+pub enum ExpandStrategy {
+    #[default]
+    SeparateFolders,
+    SameFolder,
+    IdOnly,
 }
 
 #[cfg(test)]
