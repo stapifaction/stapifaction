@@ -32,7 +32,7 @@ pub trait Persister {
             let child_path = base_path
                 .as_ref()
                 .join(persistable.path().unwrap_or_default())
-                .join(path.unwrap_or_default());
+                .join(path);
 
             self.persist(&child_path, child.as_ref())?;
         }

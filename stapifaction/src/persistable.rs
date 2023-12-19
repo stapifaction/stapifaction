@@ -8,9 +8,7 @@ pub trait Persistable {
     fn path(&self) -> Option<PathBuf>;
     fn expand_strategy(&self) -> ExpandStrategy;
     fn serializable_entity<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>>;
-    fn children<'e>(
-        &'e self,
-    ) -> Box<dyn Iterator<Item = (Option<PathBuf>, Cow<'e, Child<'e>>)> + 'e>;
+    fn children<'e>(&'e self) -> Box<dyn Iterator<Item = (PathBuf, Cow<'e, Child<'e>>)> + 'e>;
 }
 
 #[derive(Clone)]
@@ -55,16 +53,14 @@ impl<'a> Persistable for Child<'a> {
         }
     }
 
-    fn children<'e>(
-        &'e self,
-    ) -> Box<dyn Iterator<Item = (Option<PathBuf>, Cow<'e, Child<'e>>)> + 'e> {
+    fn children<'e>(&'e self) -> Box<dyn Iterator<Item = (PathBuf, Cow<'e, Child<'e>>)> + 'e> {
         match self {
             Child::Subset(subset) => subset.children(),
             Child::Collection(collection) => {
                 Box::new(collection.iter().enumerate().map(|(index, child)| {
                     let path = match child.path() {
-                        Some(_) => None,
-                        None => Some(PathBuf::from(index.to_string())),
+                        Some(_) => PathBuf::default(),
+                        None => PathBuf::from(index.to_string()),
                     };
 
                     (path, Cow::Borrowed(child))
