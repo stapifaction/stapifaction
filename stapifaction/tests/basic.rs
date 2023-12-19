@@ -26,5 +26,5 @@ fn test_basic() {
 
     persister.persist("./", &user).unwrap();
 
-    persister.assert([PathBuf::from("./users/1")])
+    persister.assert([PathBuf::from("./users/1/index")])
 }

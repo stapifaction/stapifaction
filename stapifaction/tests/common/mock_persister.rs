@@ -45,9 +45,9 @@ impl Persister for MockPersister {
         &self,
         parent_path: &Path,
         entity_name: Option<PathBuf>,
-        _strategy: ExpandStrategy,
+        strategy: ExpandStrategy,
     ) -> PathBuf {
-        parent_path.join(entity_name.unwrap_or_default())
+        strategy.resolve_path(parent_path, entity_name)
     }
 
     fn write<'a>(&self, path: &Path, _serializable: Box<dyn Serialize + 'a>) -> Result<()> {
