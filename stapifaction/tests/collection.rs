@@ -51,9 +51,9 @@ fn test_collection() {
     persister.persist("./", &product).unwrap();
 
     persister.assert([
-        PathBuf::from("./products/1"),
-        PathBuf::from("./products/1/factories/10"),
-        PathBuf::from("./products/1/factories/20"),
-        PathBuf::from("./products/1/factories/30"),
+        PathBuf::from("./products/1/index"),
+        PathBuf::from("./products/1/factories/10/index"),
+        PathBuf::from("./products/1/factories/20/index"),
+        PathBuf::from("./products/1/factories/30/index"),
     ])
 }

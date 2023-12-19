@@ -41,7 +41,7 @@ fn test_subset() {
     persister.persist("./", &user).unwrap();
 
     persister.assert([
-        PathBuf::from("./users/1"),
-        PathBuf::from("./users/1/address"),
+        PathBuf::from("./users/1/index"),
+        PathBuf::from("./users/1/address/index"),
     ])
 }
