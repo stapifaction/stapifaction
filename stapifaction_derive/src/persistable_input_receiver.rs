@@ -43,23 +43,29 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
         let id = main_set.iter().find(|(_, f)| f.id).map(|(f, _)| &f.member);
 
         let path = match (path, id) {
-            (Some(path), Some(id)) => quote! { Some(format!("{}/{}", #path, self.#id).into()) },
-            (Some(path), None) => quote! { Some(String::from(#path).into()) },
-            (None, Some(id)) => quote! { Some(format!("{}", self.#id).into()) },
-            _ => quote! { None },
+            (Some(path), Some(id)) => {
+                quote! { stapifaction::ResolvablePath::new(Some(String::from(#path).into()), Some(format!("{}",self.#id).into())) }
+            }
+            (Some(path), None) => {
+                quote! { stapifaction::ResolvablePath::new(Some(String::from(#path).into()), None) }
+            }
+            (None, Some(id)) => {
+                quote! { stapifaction::ResolvablePath::new(None, Some(format!("{}", self.#id).into())) }
+            }
+            _ => quote! { stapifaction::ResolvablePath::new(None, None) },
         };
 
-        let expand_strategy = match expand_strategy {
+        let expand_strategy = expand_strategy.map(|expand_strategy| match expand_strategy {
             ExpandStrategy::SeparateFolders => {
-                quote! { stapifaction::ExpandStrategy::SubsetsInSeparateFolders(format!("index")) }
+                quote! { Some(stapifaction::ExpandStrategy::SubsetsInSeparateFolders(format!("index"))) }
             }
             ExpandStrategy::SameFolder => {
-                quote! { stapifaction::ExpandStrategy::SubsetsGroupedInUniqueFolder(format!("data")) }
+                quote! { Some(stapifaction::ExpandStrategy::SubsetsGroupedInUniqueFolder(format!("data"))) }
             }
             ExpandStrategy::IdOnly => {
-                quote! { stapifaction::ExpandStrategy::IdAsFileName }
+                quote! { Some(stapifaction::ExpandStrategy::IdAsFileName) }
             }
-        };
+        }).unwrap_or_else(|| quote! { None });
 
         let fields_count = main_set.len();
         let (field_idents_str, field_idents) = main_set
@@ -150,11 +156,11 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
             }
 
             impl stapifaction::Persistable for #ident {
-                fn path(&self) -> Option<std::path::PathBuf> {
+                fn path(&self) -> stapifaction::ResolvablePath {
                     #path
                 }
 
-                fn expand_strategy(&self) -> stapifaction::ExpandStrategy {
+                fn expand_strategy(&self) -> Option<stapifaction::ExpandStrategy> {
                     #expand_strategy
                 }
 
@@ -169,21 +175,24 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
                     let mut map = std::collections::HashMap::new();
 
                     #(
-                        map.insert(#subset_path_buf,
-                         std::borrow::Cow::Owned(stapifaction::Child::subset(&self.#subset_idents))
+                        map.insert(
+                            #subset_path_buf,
+                            std::borrow::Cow::Owned(stapifaction::Child::subset(&self.#subset_idents))
                         );
                     )*
 
                     #(
                         if let Some(subset) = &self.#optional_subset_idents {
-                            map.insert(#optional_subset_path_buf,
+                            map.insert(
+                                #optional_subset_path_buf,
                                 std::borrow::Cow::Owned(stapifaction::Child::subset(subset))
                             );
                         }
                     )*
 
                     #(
-                        map.insert(#collection_path_buf,
+                        map.insert(
+                            #collection_path_buf,
                             std::borrow::Cow::Owned(stapifaction::Child::collection(self.#collection_idents.iter()))
                         );
                     )*
@@ -229,8 +238,7 @@ fn is_option(ty: &Type) -> bool {
 #[darling(attributes(persistable), supports(struct_any))]
 pub struct PersistableInputReceiver {
     pub path: Option<String>,
-    #[darling(default)]
-    pub expand_strategy: ExpandStrategy,
+    pub expand_strategy: Option<ExpandStrategy>,
 }
 
 #[derive(Debug, FromField)]
@@ -263,11 +271,9 @@ pub enum Expand {
     All,
 }
 
-#[derive(Debug, Clone, Copy, Default, FromMeta)]
-#[darling(default)]
+#[derive(Debug, Clone, Copy, FromMeta)]
 #[darling(rename_all = "kebab-case")]
 pub enum ExpandStrategy {
-    #[default]
     SeparateFolders,
     SameFolder,
     IdOnly,

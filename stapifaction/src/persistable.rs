@@ -2,11 +2,11 @@ use std::{borrow::Cow, path::PathBuf};
 
 use erased_serde::Serialize as ErasedSerialize;
 
-use crate::ExpandStrategy;
+use crate::{ExpandStrategy, ResolvablePath};
 
 pub trait Persistable {
-    fn path(&self) -> Option<PathBuf>;
-    fn expand_strategy(&self) -> ExpandStrategy;
+    fn path(&self) -> ResolvablePath;
+    fn expand_strategy(&self) -> Option<ExpandStrategy>;
     fn serializable_entity<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>>;
     fn children<'e>(&'e self) -> Box<dyn Iterator<Item = (PathBuf, Cow<'e, Child<'e>>)> + 'e>;
 }
@@ -32,17 +32,17 @@ impl<'a> Child<'a> {
 }
 
 impl<'a> Persistable for Child<'a> {
-    fn path(&self) -> Option<PathBuf> {
+    fn path(&self) -> ResolvablePath {
         match self {
             Child::Subset(subset) => subset.path(),
-            Child::Collection(_) => None,
+            Child::Collection(_) => ResolvablePath::default(),
         }
     }
 
-    fn expand_strategy(&self) -> ExpandStrategy {
+    fn expand_strategy(&self) -> Option<ExpandStrategy> {
         match self {
             Child::Subset(subset) => subset.expand_strategy(),
-            Child::Collection(_) => ExpandStrategy::IdAsFileName,
+            Child::Collection(_) => None,
         }
     }
 
@@ -58,9 +58,10 @@ impl<'a> Persistable for Child<'a> {
             Child::Subset(subset) => subset.children(),
             Child::Collection(collection) => {
                 Box::new(collection.iter().enumerate().map(|(index, child)| {
-                    let path = match child.path() {
-                        Some(_) => PathBuf::default(),
-                        None => PathBuf::from(index.to_string()),
+                    let path = if child.path().id.is_some() {
+                        PathBuf::default()
+                    } else {
+                        index.to_string().into()
                     };
 
                     (path, Cow::Borrowed(child))

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use common::MockPersister;
-use stapifaction::{Persistable, Persister};
+use stapifaction::{ExpandStrategy, Persistable, Persister};
 
 mod common;
 
@@ -24,7 +24,7 @@ struct Address {
 }
 
 #[test]
-fn test_subset() {
+fn test_subset_in_separate_folders() {
     let persister = MockPersister::new();
 
     let user = User {
@@ -38,10 +38,41 @@ fn test_subset() {
         },
     };
 
-    persister.persist("./", &user).unwrap();
+    persister.persist("./", &user, None).unwrap();
 
     persister.assert([
         PathBuf::from("./users/1/index"),
         PathBuf::from("./users/1/address/index"),
+    ])
+}
+
+#[test]
+fn test_subset_in_same_folder() {
+    let persister = MockPersister::new();
+
+    let user = User {
+        id: String::from("1"),
+        first_name: String::from("John"),
+        last_name: String::from("Doe"),
+        address: Address {
+            street: String::from("123 Main Street"),
+            zip_code: String::from("ST 12345"),
+            city: String::from("New York"),
+        },
+    };
+
+    persister
+        .persist(
+            "./",
+            &user,
+            Some(ExpandStrategy::SubsetsGroupedInUniqueFolder(String::from(
+                "data",
+            ))),
+        )
+        .unwrap();
+
+    persister.assert([
+        PathBuf::from("./users/1/data"),
+        PathBuf::from("./users/1/address"),
     ])
 }
