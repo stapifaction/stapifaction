@@ -6,7 +6,7 @@ use std::{
 
 use erased_serde::Serialize;
 use eyre::Result;
-use stapifaction::{ExpandStrategy, Persister};
+use stapifaction::Persister;
 
 pub struct MockPersister {
     paths: RwLock<HashSet<PathBuf>>,
@@ -41,15 +41,6 @@ impl MockPersister {
 }
 
 impl Persister for MockPersister {
-    fn resolve_path(
-        &self,
-        parent_path: &Path,
-        entity_name: Option<PathBuf>,
-        strategy: ExpandStrategy,
-    ) -> PathBuf {
-        strategy.resolve_path(parent_path, entity_name)
-    }
-
     fn write<'a>(&self, path: &Path, _serializable: Box<dyn Serialize + 'a>) -> Result<()> {
         if !self.paths.write().unwrap().insert(path.to_owned()) {
             panic!("The path '{}' has been added twice", path.display())

@@ -24,7 +24,7 @@ fn test_basic() {
         last_name: String::from("Doe"),
     };
 
-    persister.persist("./", &user).unwrap();
+    persister.persist("./", &user, None).unwrap();
 
     persister.assert([PathBuf::from("./users/1/index")])
 }

@@ -1,35 +1,26 @@
 use std::{
     fs::{self, File},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use erased_serde::Serialize;
 use eyre::{Context, Result};
 
-use crate::{ExpandStrategy, Persistable};
+use crate::Persistable;
 
 use super::Persister;
 
 pub struct JsonPersister;
 
 impl Persister for JsonPersister {
-    fn resolve_path(
-        &self,
-        parent_path: &Path,
-        entity_name: Option<PathBuf>,
-        strategy: ExpandStrategy,
-    ) -> PathBuf {
-        let mut path = strategy.resolve_path(parent_path, entity_name);
-
-        path.set_extension("json");
-
-        path
-    }
-
     fn write<'a>(&self, path: &Path, serializable: Box<dyn Serialize + 'a>) -> Result<()> {
         if let Some(parent_path) = path.parent() {
             fs::create_dir_all(parent_path)?;
         }
+
+        let mut path = path.to_path_buf();
+
+        path.set_extension("json");
 
         let file = File::create(&path)
             .wrap_err_with(|| format!("Failed to create file '{}'", path.display()))?;
@@ -45,7 +36,7 @@ pub trait ToJson: Persistable + Sized {
     fn to_json<P: AsRef<Path>>(&self, base_path: P) -> Result<()> {
         let persister = JsonPersister;
 
-        persister.persist(base_path.as_ref(), self)?;
+        persister.persist(base_path.as_ref(), self, None)?;
 
         Ok(())
     }
