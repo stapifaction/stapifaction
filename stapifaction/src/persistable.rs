@@ -58,7 +58,7 @@ impl<'a> Persistable for Child<'a> {
             Child::Subset(subset) => subset.children(),
             Child::Collection(collection) => {
                 Box::new(collection.iter().enumerate().map(|(index, child)| {
-                    let path = if child.path().id.is_some() {
+                    let path = if child.path().has_id() {
                         PathBuf::default()
                     } else {
                         index.to_string().into()

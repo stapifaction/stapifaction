@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::ResolvablePath;
+use crate::{PathElement, ResolvablePath};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ExpandStrategy {
@@ -11,33 +11,23 @@ pub enum ExpandStrategy {
 
 impl ExpandStrategy {
     pub fn resolve_path(&self, resolvable: &ResolvablePath) -> PathBuf {
-        let mut path = resolvable.path();
-
+        let path = PathBuf::from(resolvable);
         match self {
-            ExpandStrategy::SubsetsInSeparateFolders(name) => {
-                path.push(resolvable.id());
-                path.push(name);
-            }
+            ExpandStrategy::SubsetsInSeparateFolders(name) => path.join(name),
             ExpandStrategy::SubsetsGroupedInUniqueFolder(name) => {
-                path.push(
-                    resolvable
-                        .id
-                        .clone()
-                        .map(|e| e.join(name))
-                        .unwrap_or_default(),
-                );
+                if matches!(resolvable.last(), PathElement::ChildQualifier(_)) {
+                    path
+                } else {
+                    path.join(name)
+                }
             }
-            ExpandStrategy::IdAsFileName => {
-                path.push(resolvable.id.clone().unwrap());
-            }
-        };
-
-        path
+            ExpandStrategy::IdAsFileName => path,
+        }
     }
 }
 
 impl Default for ExpandStrategy {
     fn default() -> Self {
-        ExpandStrategy::SubsetsInSeparateFolders(String::from("index"))
+        ExpandStrategy::SubsetsGroupedInUniqueFolder(String::from("data"))
     }
 }

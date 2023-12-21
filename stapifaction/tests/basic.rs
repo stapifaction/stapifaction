@@ -6,9 +6,7 @@ use stapifaction::{Persistable, Persister};
 mod common;
 
 #[derive(Persistable)]
-#[persistable(path = "users")]
 struct User {
-    #[persistable(id)]
     pub id: String,
     pub first_name: String,
     pub last_name: String,
@@ -26,5 +24,5 @@ fn test_basic() {
 
     persister.persist("./", &user, None).unwrap();
 
-    persister.assert([PathBuf::from("./users/1/index")])
+    persister.assert([PathBuf::from("./data")])
 }

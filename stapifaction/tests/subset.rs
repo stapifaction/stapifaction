@@ -24,7 +24,7 @@ struct Address {
 }
 
 #[test]
-fn test_subset_in_separate_folders() {
+fn test_subset_in_same_folder() {
     let persister = MockPersister::new();
 
     let user = User {
@@ -41,13 +41,13 @@ fn test_subset_in_separate_folders() {
     persister.persist("./", &user, None).unwrap();
 
     persister.assert([
-        PathBuf::from("./users/1/index"),
-        PathBuf::from("./users/1/address/index"),
+        PathBuf::from("./users/1/data"),
+        PathBuf::from("./users/1/address"),
     ])
 }
 
 #[test]
-fn test_subset_in_same_folder() {
+fn test_subset_in_separate_folders() {
     let persister = MockPersister::new();
 
     let user = User {
@@ -65,14 +65,14 @@ fn test_subset_in_same_folder() {
         .persist(
             "./",
             &user,
-            Some(ExpandStrategy::SubsetsGroupedInUniqueFolder(String::from(
-                "data",
+            Some(ExpandStrategy::SubsetsInSeparateFolders(String::from(
+                "index",
             ))),
         )
         .unwrap();
 
     persister.assert([
-        PathBuf::from("./users/1/data"),
-        PathBuf::from("./users/1/address"),
+        PathBuf::from("./users/1/index"),
+        PathBuf::from("./users/1/address/index"),
     ])
 }
