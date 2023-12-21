@@ -27,7 +27,6 @@ struct Factory {
 }
 
 #[derive(Persistable)]
-#[persistable(expand_strategy = "id-only")]
 struct Order {
     #[persistable(id)]
     pub id: String,
@@ -72,9 +71,9 @@ fn test_collection() {
 
     persister.assert([
         PathBuf::from("./products/1/data"),
-        PathBuf::from("./products/1/factories/10/data"),
-        PathBuf::from("./products/1/factories/20/data"),
-        PathBuf::from("./products/1/factories/30/data"),
+        PathBuf::from("./products/1/factories/10"),
+        PathBuf::from("./products/1/factories/20"),
+        PathBuf::from("./products/1/factories/30"),
         PathBuf::from("./products/1/orders/ZGFS"),
         PathBuf::from("./products/1/orders/OJGD"),
     ])

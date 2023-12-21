@@ -45,9 +45,6 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
                 ExpandStrategy::SameFolder => {
                     quote! { Some(stapifaction::ExpandStrategy::SubsetsGroupedInUniqueFolder(format!("data"))) }
                 }
-                ExpandStrategy::IdOnly => {
-                    quote! { Some(stapifaction::ExpandStrategy::IdAsFileName) }
-                }
             }).unwrap_or_else(|| 
                 quote! { None }
             );
@@ -281,7 +278,6 @@ pub enum Expand {
 pub enum ExpandStrategy {
     SeparateFolders,
     SameFolder,
-    IdOnly,
 }
 
 #[cfg(test)]

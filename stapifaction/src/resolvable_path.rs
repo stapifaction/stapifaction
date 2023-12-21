@@ -32,6 +32,10 @@ impl ResolvablePath {
     pub fn has_id(&self) -> bool {
         matches!(self.last(), PathElement::Id(_))
     }
+
+    pub fn count(&self) -> usize {
+        self.elements.len()
+    }
 }
 
 impl From<&ResolvablePath> for PathBuf {
