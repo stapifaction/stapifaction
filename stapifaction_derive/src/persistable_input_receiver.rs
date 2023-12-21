@@ -36,36 +36,41 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
             .filter(|(f, _)| !f.attrs.skip_serializing())
             .partition::<Vec<_>, _>(|(_, f)| f.expand().is_none());
 
+        let id = main_set.iter().find(|(_, f)| f.id).map(|(f, _)| &f.member);
+
+        let expand_strategy = expand_strategy.map(|expand_strategy| match expand_strategy {
+                ExpandStrategy::SeparateFolders => {
+                    quote! { Some(stapifaction::ExpandStrategy::SubsetsInSeparateFolders(format!("index"))) }
+                }
+                ExpandStrategy::SameFolder => {
+                    quote! { Some(stapifaction::ExpandStrategy::SubsetsGroupedInUniqueFolder(format!("data"))) }
+                }
+                ExpandStrategy::IdOnly => {
+                    quote! { Some(stapifaction::ExpandStrategy::IdAsFileName) }
+                }
+            }).unwrap_or_else(|| 
+                quote! { None }
+            );
+
         let (subsets, collections) = others
             .into_iter()
             .partition::<Vec<_>, _>(|(_, f)| matches!(*f.expand().unwrap(), Expand::Subset));
 
-        let id = main_set.iter().find(|(_, f)| f.id).map(|(f, _)| &f.member);
+        let resolvable_path = quote! { stapifaction::ResolvablePath::default() };
 
-        let path = match (path, id) {
-            (Some(path), Some(id)) => {
-                quote! { stapifaction::ResolvablePath::new(Some(String::from(#path).into()), Some(format!("{}",self.#id).into())) }
+        let resolvable_path = match path {
+            Some(path) => {
+                quote! { #resolvable_path.append(stapifaction::PathElement::Path(String::from(#path).into())) }
             }
-            (Some(path), None) => {
-                quote! { stapifaction::ResolvablePath::new(Some(String::from(#path).into()), None) }
-            }
-            (None, Some(id)) => {
-                quote! { stapifaction::ResolvablePath::new(None, Some(format!("{}", self.#id).into())) }
-            }
-            _ => quote! { stapifaction::ResolvablePath::new(None, None) },
+            None => resolvable_path,
         };
 
-        let expand_strategy = expand_strategy.map(|expand_strategy| match expand_strategy {
-            ExpandStrategy::SeparateFolders => {
-                quote! { Some(stapifaction::ExpandStrategy::SubsetsInSeparateFolders(format!("index"))) }
+        let resolvable_path = match id {
+            Some(id) => {
+                quote! { #resolvable_path.append(stapifaction::PathElement::Id(format!("{}",self.#id).into())) }
             }
-            ExpandStrategy::SameFolder => {
-                quote! { Some(stapifaction::ExpandStrategy::SubsetsGroupedInUniqueFolder(format!("data"))) }
-            }
-            ExpandStrategy::IdOnly => {
-                quote! { Some(stapifaction::ExpandStrategy::IdAsFileName) }
-            }
-        }).unwrap_or_else(|| quote! { None });
+            None => resolvable_path,
+        };
 
         let fields_count = main_set.len();
         let (field_idents_str, field_idents) = main_set
@@ -157,7 +162,7 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
 
             impl stapifaction::Persistable for #ident {
                 fn path(&self) -> stapifaction::ResolvablePath {
-                    #path
+                    #resolvable_path
                 }
 
                 fn expand_strategy(&self) -> Option<stapifaction::ExpandStrategy> {

@@ -1,33 +1,60 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-#[derive(Debug, Default)]
+use crate::PathElement;
+
+#[derive(Debug, Clone, Default)]
 pub struct ResolvablePath {
-    pub path: Option<PathBuf>,
-    pub id: Option<PathBuf>,
+    elements: Vec<PathElement>,
 }
 
 impl ResolvablePath {
-    pub fn new(path: Option<PathBuf>, id: Option<PathBuf>) -> Self {
-        Self { path, id }
-    }
-
-    pub fn path(&self) -> PathBuf {
-        self.path.clone().unwrap_or_default()
-    }
-
-    pub fn id(&self) -> PathBuf {
-        self.id.clone().unwrap_or_default()
-    }
-
-    pub fn or_with_id(mut self, id: PathBuf) -> Self {
-        let _ = self.id.get_or_insert(id);
+    pub fn append(mut self, element: PathElement) -> Self {
+        self.elements.push(element);
         self
     }
 
-    pub fn path_and_id(&self) -> PathBuf {
-        self.path
-            .clone()
-            .unwrap_or_default()
-            .join(self.id.clone().unwrap_or_default())
+    pub fn append_all(mut self, path: ResolvablePath) -> Self {
+        path.elements
+            .into_iter()
+            .for_each(|e| self.elements.push(e));
+
+        self
+    }
+
+    pub fn merge(&self) -> Self {
+        ResolvablePath::default().append(PathElement::Path(self.into()))
+    }
+
+    pub fn last(&self) -> &PathElement {
+        self.elements.last().unwrap()
+    }
+
+    pub fn has_id(&self) -> bool {
+        matches!(self.last(), PathElement::Id(_))
+    }
+}
+
+impl From<&ResolvablePath> for PathBuf {
+    fn from(value: &ResolvablePath) -> Self {
+        let mut path = PathBuf::default();
+
+        value
+            .elements
+            .iter()
+            .for_each(|e| path.push(PathBuf::from(e.clone())));
+
+        path
+    }
+}
+
+impl From<&str> for ResolvablePath {
+    fn from(value: &str) -> Self {
+        ResolvablePath::default().append(PathElement::Path(value.into()))
+    }
+}
+
+impl From<&Path> for ResolvablePath {
+    fn from(value: &Path) -> Self {
+        ResolvablePath::default().append(PathElement::Path(value.to_path_buf()))
     }
 }
