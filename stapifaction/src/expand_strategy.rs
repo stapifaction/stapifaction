@@ -4,30 +4,31 @@ use crate::{PathElement, ResolvablePath};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ExpandStrategy {
-    SubsetsInSeparateFolders(String),
-    SubsetsGroupedInUniqueFolder(String),
-    IdAsFileName,
+    SeparateFolders(String),
+    UniqueFolder(String),
 }
 
 impl ExpandStrategy {
-    pub fn resolve_path(&self, resolvable: &ResolvablePath) -> PathBuf {
+    pub fn resolve_path(&self, resolvable: &ResolvablePath, child_count: usize) -> PathBuf {
         let path = PathBuf::from(resolvable);
         match self {
-            ExpandStrategy::SubsetsInSeparateFolders(name) => path.join(name),
-            ExpandStrategy::SubsetsGroupedInUniqueFolder(name) => {
-                if matches!(resolvable.last(), PathElement::ChildQualifier(_)) {
+            ExpandStrategy::SeparateFolders(name) => path.join(name),
+            ExpandStrategy::UniqueFolder(name) => {
+                if resolvable.count() > 1
+                    && (child_count == 0
+                        || matches!(resolvable.last(), PathElement::ChildQualifier(_)))
+                {
                     path
                 } else {
                     path.join(name)
                 }
             }
-            ExpandStrategy::IdAsFileName => path,
         }
     }
 }
 
 impl Default for ExpandStrategy {
     fn default() -> Self {
-        ExpandStrategy::SubsetsGroupedInUniqueFolder(String::from("data"))
+        ExpandStrategy::UniqueFolder(String::from("data"))
     }
 }

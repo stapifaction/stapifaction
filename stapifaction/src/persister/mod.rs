@@ -19,17 +19,18 @@ pub trait Persister {
     ) -> Result<()> {
         let expand_strategy = expand_strategy.or(persistable.expand_strategy());
         let base_path = base_path.into().append_all(persistable.path());
+        let children = persistable.children().collect::<Vec<_>>();
 
         if let Some(serializable_entity) = persistable.serializable_entity() {
             let resolved_path = expand_strategy
                 .clone()
                 .unwrap_or_default()
-                .resolve_path(&base_path);
+                .resolve_path(&base_path, children.len());
 
             self.write(&resolved_path, serializable_entity)?;
         }
 
-        for (child_path, child) in persistable.children() {
+        for (child_path, child) in children {
             self.persist(
                 base_path
                     .clone()

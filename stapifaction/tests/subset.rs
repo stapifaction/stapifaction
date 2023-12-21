@@ -65,9 +65,7 @@ fn test_subset_in_separate_folders() {
         .persist(
             "./",
             &user,
-            Some(ExpandStrategy::SubsetsInSeparateFolders(String::from(
-                "index",
-            ))),
+            Some(ExpandStrategy::SeparateFolders(String::from("index"))),
         )
         .unwrap();
 
