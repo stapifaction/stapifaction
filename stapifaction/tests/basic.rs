@@ -12,6 +12,13 @@ struct User {
     pub last_name: String,
 }
 
+#[derive(Persistable)]
+struct Order {
+    #[persistable(id)]
+    pub id: String,
+    pub timestamp: u64,
+}
+
 #[test]
 fn test_basic() {
     let persister = MockPersister::new();
@@ -25,4 +32,18 @@ fn test_basic() {
     persister.persist("./", &user, None).unwrap();
 
     persister.assert([PathBuf::from("./data")])
+}
+
+#[test]
+fn test_basic_with_id() {
+    let persister = MockPersister::new();
+
+    let order = Order {
+        id: String::from("1"),
+        timestamp: 1703191863,
+    };
+
+    persister.persist("./", &order, None).unwrap();
+
+    persister.assert([PathBuf::from("./1")])
 }
