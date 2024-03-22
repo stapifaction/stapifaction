@@ -33,7 +33,7 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
 
         let (main_set, others) = fields
             .into_iter()
-            .filter(|(f, _)| !f.attrs.skip_serializing())
+            .filter(|(f, p)| !f.attrs.skip_serializing() || p.expand.is_some())
             .partition::<Vec<_>, _>(|(_, f)| f.expand().is_none());
 
         let id = main_set.iter().find(|(_, f)| f.id).map(|(f, _)| &f.member);
