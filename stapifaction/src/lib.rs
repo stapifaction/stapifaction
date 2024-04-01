@@ -1,3 +1,11 @@
+#![doc = include_str!("../README.md")]
+#![warn(
+    missing_docs,
+    unreachable_pub,
+    clippy::missing_const_for_fn,
+    rustdoc::all
+)]
+
 mod expand_strategy;
 mod path_element;
 mod persistable;
