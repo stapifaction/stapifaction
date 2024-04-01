@@ -1,9 +1,13 @@
 use std::path::PathBuf;
 
+/// A path element.
 #[derive(Debug, Clone)]
 pub enum PathElement {
+    /// A regular path.
     Path(PathBuf),
+    /// A path corresponding to an id.
     Id(PathBuf),
+    /// A path qualifying a child.
     ChildQualifier(PathBuf),
 }
 

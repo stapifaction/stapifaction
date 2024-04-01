@@ -8,9 +8,12 @@ use eyre::Result;
 
 use crate::{ExpandStrategy, PathElement, Persistable, ResolvablePath};
 
+/// Persister handle how entity are actually persisted.
 pub trait Persister {
+    /// Writes an entity.
     fn write<'a>(&self, path: &Path, serializable: Box<dyn Serialize + 'a>) -> Result<()>;
 
+    /// Persists a [`Persistable`] and its children.
     fn persist<P: Into<ResolvablePath>, T: Persistable>(
         &self,
         base_path: P,

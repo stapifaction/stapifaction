@@ -2,13 +2,17 @@ use std::path::PathBuf;
 
 use crate::{PathElement, ResolvablePath};
 
+/// An expand strategy defines how.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ExpandStrategy {
+    /// Persists each child in a different folder.
     SeparateFolders(String),
+    /// Persists each child in the same folder.
     UniqueFolder(String),
 }
 
 impl ExpandStrategy {
+    /// Resolves a [`ResolvablePath`] to a [`PathBuf`].
     pub fn resolve_path(&self, resolvable: &ResolvablePath, child_count: usize) -> PathBuf {
         let path = PathBuf::from(resolvable);
         match self {
