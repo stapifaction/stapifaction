@@ -14,6 +14,7 @@ struct User {
     pub first_name: String,
     pub last_name: String,
     #[persistable(expand)]
+    #[serde(skip)]
     pub address: Address,
 }
 
