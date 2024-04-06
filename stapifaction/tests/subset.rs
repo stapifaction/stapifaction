@@ -1,11 +1,12 @@
 use std::path::PathBuf;
 
 use common::MockPersister;
+use serde::Serialize;
 use stapifaction::{ExpandStrategy, Persistable, Persister};
 
 mod common;
 
-#[derive(Persistable)]
+#[derive(Serialize, Persistable)]
 #[persistable(path = "users")]
 struct User {
     #[persistable(id)]
@@ -16,7 +17,7 @@ struct User {
     pub address: Address,
 }
 
-#[derive(Persistable)]
+#[derive(Serialize, Persistable)]
 struct Address {
     pub street: String,
     pub zip_code: String,
