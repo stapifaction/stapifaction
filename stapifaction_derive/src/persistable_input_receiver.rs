@@ -143,8 +143,8 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
                     #expand_strategy
                 }
 
-                fn as_serializable<'e>(&'e self) -> Option<Box<dyn stapifaction::serde::ErasedSerialize + 'e>> {
-                    Some(Box::new(self) as Box<dyn stapifaction::serde::ErasedSerialize>)
+                fn as_serializable<'e>(&'e self) -> Option<Box<dyn stapifaction::ErasedSerialize + 'e>> {
+                    Some(Box::new(self) as Box<dyn stapifaction::ErasedSerialize>)
                 }
 
                 fn children<'e>(&'e self) -> Box<dyn Iterator<Item = (std::path::PathBuf, std::borrow::Cow<'e, stapifaction::Child<'e>>)> + 'e>
