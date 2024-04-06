@@ -15,8 +15,10 @@ struct Product {
     pub label: String,
     pub price: u64,
     #[persistable(expand = "all")]
+    #[serde(skip)]
     pub factories: Vec<Factory>,
     #[persistable(expand = "all")]
+    #[serde(skip)]
     pub orders: Vec<Order>,
 }
 
