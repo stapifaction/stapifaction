@@ -11,7 +11,7 @@ pub trait Persistable {
     /// The strategy used to expand childrens.
     fn expand_strategy(&self) -> Option<ExpandStrategy>;
     /// The entity that will be serialized.
-    fn serializable_entity<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>>;
+    fn as_serializable<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>>;
     /// The entity children.
     fn children<'e>(&'e self) -> Box<dyn Iterator<Item = (PathBuf, Cow<'e, Child<'e>>)> + 'e>;
 }
@@ -56,9 +56,9 @@ impl<'a> Persistable for Child<'a> {
         }
     }
 
-    fn serializable_entity<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>> {
+    fn as_serializable<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>> {
         match self {
-            Child::Subset(subset) => subset.serializable_entity(),
+            Child::Subset(subset) => subset.as_serializable(),
             Child::Collection(_) => None,
         }
     }

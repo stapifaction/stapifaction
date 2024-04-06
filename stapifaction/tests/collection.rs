@@ -1,12 +1,13 @@
 use std::path::PathBuf;
 
+use serde::Serialize;
 use stapifaction::{Persistable, Persister};
 
 use common::MockPersister;
 
 mod common;
 
-#[derive(Persistable)]
+#[derive(Serialize, Persistable)]
 #[persistable(path = "products")]
 struct Product {
     #[persistable(id)]
@@ -19,14 +20,14 @@ struct Product {
     pub orders: Vec<Order>,
 }
 
-#[derive(Persistable)]
+#[derive(Serialize, Persistable)]
 struct Factory {
     #[persistable(id)]
     pub id: u64,
     pub name: String,
 }
 
-#[derive(Persistable)]
+#[derive(Serialize, Persistable)]
 struct Order {
     #[persistable(id)]
     pub id: String,

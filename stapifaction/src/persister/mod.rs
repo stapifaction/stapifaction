@@ -24,13 +24,13 @@ pub trait Persister {
         let base_path = base_path.into().append_all(persistable.path());
         let children = persistable.children().collect::<Vec<_>>();
 
-        if let Some(serializable_entity) = persistable.serializable_entity() {
+        if let Some(serializable) = persistable.as_serializable() {
             let resolved_path = expand_strategy
                 .clone()
                 .unwrap_or_default()
                 .resolve_path(&base_path, children.len());
 
-            self.write(&resolved_path, serializable_entity)?;
+            self.write(&resolved_path, serializable)?;
         }
 
         for (child_path, child) in children {

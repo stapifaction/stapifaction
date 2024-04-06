@@ -19,7 +19,6 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
         expand_strategy,
     } = PersistableInputReceiver::from_derive_input(original).unwrap();
 
-    let ident_str = ident.to_string();
     let container_ident = format_ident!("{}Container", ident);
 
     if let Data::Struct(_, fields) = data {
@@ -68,15 +67,6 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
             }
             None => resolvable_path,
         };
-
-        let fields_count = main_set.len();
-        let (field_idents_str, field_idents) = main_set
-            .iter()
-            .filter_map(|(f, _)| match &f.member {
-                Member::Named(ident) => Some((f.attrs.name().serialize_name(), ident)),
-                Member::Unnamed(_) => None,
-            })
-            .multiunzip::<(Vec<_>, Vec<_>)>();
 
         let (subset_idents_str, subsets) = subsets
             .iter()
@@ -144,19 +134,6 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
                 entity: &'a #ident,
             }
 
-            impl<'a> stapifaction::serde::Serialize for #container_ident<'a> {
-                fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-                where
-                    S: stapifaction::serde::Serializer,
-                {
-                    let mut state = serializer.serialize_struct(#ident_str, #fields_count)?;
-
-                    #( stapifaction::serde::SerializeStruct::serialize_field(&mut state, #field_idents_str, &self.entity.#field_idents)?; )*
-
-                    stapifaction::serde::SerializeStruct::end(state)
-                }
-            }
-
             impl stapifaction::Persistable for #ident {
                 fn path(&self) -> stapifaction::ResolvablePath {
                     #resolvable_path
@@ -166,10 +143,8 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
                     #expand_strategy
                 }
 
-                fn serializable_entity<'e>(&'e self) -> Option<Box<dyn stapifaction::serde::ErasedSerialize + 'e>> {
-                    let container = #container_ident { entity: self };
-
-                    Some(Box::new(container) as Box<dyn stapifaction::serde::ErasedSerialize>)
+                fn as_serializable<'e>(&'e self) -> Option<Box<dyn stapifaction::serde::ErasedSerialize + 'e>> {
+                    Some(Box::new(self) as Box<dyn stapifaction::serde::ErasedSerialize>)
                 }
 
                 fn children<'e>(&'e self) -> Box<dyn Iterator<Item = (std::path::PathBuf, std::borrow::Cow<'e, stapifaction::Child<'e>>)> + 'e>
