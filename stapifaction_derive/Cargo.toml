@@ -1,7 +1,14 @@
 [package]
 name = "stapifaction_derive"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
+description = "Macros implementation of #[derive(Persistable)]."
+keywords = ["serde", "api"]
+categories = ["data-structures", "filesystem"]
+authors = ["leruaa"]
+license = "MIT"
+homepage = "https://github.com/stapifaction/stapifaction"
+repository = "https://github.com/stapifaction/stapifaction"
 
 [lib]
 name = "stapifaction_derive"
