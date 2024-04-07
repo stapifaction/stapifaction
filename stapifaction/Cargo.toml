@@ -20,8 +20,8 @@ eyre = "0.6"
 [features]
 default = ["derive"]
 
-derive = ["stapifaction_derive"]
-json = ["serde_json"]
+derive = ["dep:stapifaction_derive"]
+json = ["dep:serde_json"]
 
 [dev-dependencies]
 serde = { version = "1.0", features = ["derive"] }
