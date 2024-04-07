@@ -5,7 +5,7 @@ use erased_serde::Serialize as ErasedSerialize;
 use crate::{ExpandStrategy, ResolvablePath};
 
 /// Persistable defines how to persist a given entity.
-pub trait Persistable {
+pub trait Persist {
     /// The path where the entity will be persisted.
     fn path(&self) -> ResolvablePath;
     /// The strategy used to expand childrens.
@@ -20,14 +20,14 @@ pub trait Persistable {
 #[derive(Clone)]
 pub enum Child<'a> {
     /// A entity child.
-    Entity(&'a dyn Persistable),
+    Entity(&'a dyn Persist),
     /// A children collections.
     Collection(Box<[Child<'a>]>),
 }
 
 impl<'a> Child<'a> {
     /// Creates a new entity.
-    pub fn entity<P: Persistable>(entity: &'a P) -> Self {
+    pub fn entity<P: Persist>(entity: &'a P) -> Self {
         Self::Entity(entity)
     }
 
@@ -35,13 +35,13 @@ impl<'a> Child<'a> {
     pub fn collection<I, P>(collection: I) -> Self
     where
         I: Iterator<Item = &'a P> + 'a,
-        P: Persistable + 'a,
+        P: Persist + 'a,
     {
         Self::Collection(collection.map(Child::entity).collect())
     }
 }
 
-impl<'a> Persistable for Child<'a> {
+impl<'a> Persist for Child<'a> {
     fn path(&self) -> ResolvablePath {
         match self {
             Child::Entity(entity) => entity.path(),

@@ -2,23 +2,23 @@ use std::path::PathBuf;
 
 use common::MockPersister;
 use serde::Serialize;
-use stapifaction::{ExpandStrategy, Persistable, Persister};
+use stapifaction::{ExpandStrategy, Persist, Persister};
 
 mod common;
 
-#[derive(Serialize, Persistable)]
-#[persistable(path = "users")]
+#[derive(Serialize, Persist)]
+#[persist(path = "users")]
 struct User {
-    #[persistable(id)]
+    #[persist(id)]
     pub id: String,
     pub first_name: String,
     pub last_name: String,
-    #[persistable(expand)]
+    #[persist(expand)]
     #[serde(skip)]
     pub address: Address,
 }
 
-#[derive(Serialize, Persistable)]
+#[derive(Serialize, Persist)]
 struct Address {
     pub street: String,
     pub zip_code: String,

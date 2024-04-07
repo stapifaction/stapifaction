@@ -2,20 +2,20 @@ use std::path::PathBuf;
 
 use common::MockPersister;
 use serde::Serialize;
-use stapifaction::{Persistable, Persister};
+use stapifaction::{Persist, Persister};
 
 mod common;
 
-#[derive(Serialize, Persistable)]
+#[derive(Serialize, Persist)]
 struct User {
     pub id: String,
     pub first_name: String,
     pub last_name: String,
 }
 
-#[derive(Serialize, Persistable)]
+#[derive(Serialize, Persist)]
 struct Order {
-    #[persistable(id)]
+    #[persist(id)]
     pub id: String,
     pub timestamp: u64,
 }
