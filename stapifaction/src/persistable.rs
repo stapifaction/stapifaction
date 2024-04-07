@@ -19,16 +19,16 @@ pub trait Persistable {
 /// A child.
 #[derive(Clone)]
 pub enum Child<'a> {
-    /// A subset child.
-    Subset(&'a dyn Persistable),
+    /// A entity child.
+    Entity(&'a dyn Persistable),
     /// A children collections.
     Collection(Box<[Child<'a>]>),
 }
 
 impl<'a> Child<'a> {
-    /// Creates a new subset.
-    pub fn subset<P: Persistable>(subset: &'a P) -> Self {
-        Self::Subset(subset)
+    /// Creates a new entity.
+    pub fn entity<P: Persistable>(entity: &'a P) -> Self {
+        Self::Entity(entity)
     }
 
     /// Creates a new collection.
@@ -37,35 +37,35 @@ impl<'a> Child<'a> {
         I: Iterator<Item = &'a P> + 'a,
         P: Persistable + 'a,
     {
-        Self::Collection(collection.map(Child::subset).collect())
+        Self::Collection(collection.map(Child::entity).collect())
     }
 }
 
 impl<'a> Persistable for Child<'a> {
     fn path(&self) -> ResolvablePath {
         match self {
-            Child::Subset(subset) => subset.path(),
+            Child::Entity(entity) => entity.path(),
             Child::Collection(_) => ResolvablePath::default(),
         }
     }
 
     fn expand_strategy(&self) -> Option<ExpandStrategy> {
         match self {
-            Child::Subset(subset) => subset.expand_strategy(),
+            Child::Entity(entity) => entity.expand_strategy(),
             Child::Collection(_) => None,
         }
     }
 
     fn as_serializable<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>> {
         match self {
-            Child::Subset(subset) => subset.as_serializable(),
+            Child::Entity(entity) => entity.as_serializable(),
             Child::Collection(_) => None,
         }
     }
 
     fn children<'e>(&'e self) -> Box<dyn Iterator<Item = (PathBuf, Cow<'e, Child<'e>>)> + 'e> {
         match self {
-            Child::Subset(subset) => subset.children(),
+            Child::Entity(entity) => entity.children(),
             Child::Collection(collection) => {
                 Box::new(collection.iter().enumerate().map(|(index, child)| {
                     let path = if child.path().has_id() {

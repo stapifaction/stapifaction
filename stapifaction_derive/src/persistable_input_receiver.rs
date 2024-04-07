@@ -39,18 +39,18 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
 
         let expand_strategy = expand_strategy.map(|expand_strategy| match expand_strategy {
                 ExpandStrategy::SeparateFolders => {
-                    quote! { Some(stapifaction::ExpandStrategy::SubsetsInSeparateFolders(format!("index"))) }
+                    quote! { Some(stapifaction::ExpandStrategy::entitiesInSeparateFolders(format!("index"))) }
                 }
                 ExpandStrategy::SameFolder => {
-                    quote! { Some(stapifaction::ExpandStrategy::SubsetsGroupedInUniqueFolder(format!("data"))) }
+                    quote! { Some(stapifaction::ExpandStrategy::entitiesGroupedInUniqueFolder(format!("data"))) }
                 }
             }).unwrap_or_else(|| 
                 quote! { None }
             );
 
-        let (subsets, collections) = others
+        let (entities, collections) = others
             .into_iter()
-            .partition::<Vec<_>, _>(|(_, f)| matches!(*f.expand().unwrap(), Expand::Subset));
+            .partition::<Vec<_>, _>(|(_, f)| matches!(*f.expand().unwrap(), Expand::Entity));
 
         let resolvable_path = quote! { stapifaction::ResolvablePath::default() };
 
@@ -68,7 +68,7 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
             None => resolvable_path,
         };
 
-        let (subset_idents_str, subsets) = subsets
+        let (entity_idents_str, entities) = entities
             .iter()
             .filter_map(|(f, _)| match &f.member {
                 Member::Named(ident) => Some((
@@ -84,27 +84,27 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
             .sorted_by(|(a, _), (b, _)| a.cmp(b))
             .multiunzip::<(Vec<_>, Vec<_>)>();
 
-        let duplicated_subsets = collect_duplicates(&subset_idents_str);
+        let duplicated_entities = collect_duplicates(&entity_idents_str);
 
-        if !duplicated_subsets.is_empty() {
+        if !duplicated_entities.is_empty() {
             panic!(
-                "The following subsets are duplicated: {}",
-                duplicated_subsets.into_iter().join(", ")
+                "The following entities are duplicated: {}",
+                duplicated_entities.into_iter().join(", ")
             );
         }
 
-        let (optional_subsets, subsets) = subsets
+        let (optional_entities, entities) = entities
             .into_iter()
             .partition::<Vec<_>, _>(|(_, _, is_option)| *is_option);
 
-        let (subset_path_buf, subset_idents) = subsets
+        let (entity_path_buf, entity_idents) = entities
             .into_iter()
-            .map(|(subset_path_buf, subset_idents, _)| (subset_path_buf, subset_idents))
+            .map(|(entity_path_buf, entity_idents, _)| (entity_path_buf, entity_idents))
             .unzip::<_, _, Vec<_>, Vec<_>>();
 
-        let (optional_subset_path_buf, optional_subset_idents) = optional_subsets
+        let (optional_entity_path_buf, optional_entity_idents) = optional_entities
             .into_iter()
-            .map(|(subset_path_buf, subset_idents, _)| (subset_path_buf, subset_idents))
+            .map(|(entity_path_buf, entity_idents, _)| (entity_path_buf, entity_idents))
             .unzip::<_, _, Vec<_>, Vec<_>>();
 
         let (collection_idents_str, collection_path_buf, collection_idents) = collections
@@ -153,16 +153,16 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
 
                     #(
                         map.insert(
-                            #subset_path_buf,
-                            std::borrow::Cow::Owned(stapifaction::Child::subset(&self.#subset_idents))
+                            #entity_path_buf,
+                            std::borrow::Cow::Owned(stapifaction::Child::entity(&self.#entity_idents))
                         );
                     )*
 
                     #(
-                        if let Some(subset) = &self.#optional_subset_idents {
+                        if let Some(entity) = &self.#optional_entity_idents {
                             map.insert(
-                                #optional_subset_path_buf,
-                                std::borrow::Cow::Owned(stapifaction::Child::subset(subset))
+                                #optional_entity_path_buf,
+                                std::borrow::Cow::Owned(stapifaction::Child::entity(entity))
                             );
                         }
                     )*
@@ -233,7 +233,7 @@ impl PersistableField {
         match &self.expand {
             Some(expand) => match expand {
                 Override::Explicit(value) => Some(Cow::Borrowed(value)),
-                Override::Inherit => Some(Cow::Owned(Expand::Subset)),
+                Override::Inherit => Some(Cow::Owned(Expand::Entity)),
             },
             None => None,
         }
@@ -244,7 +244,7 @@ impl PersistableField {
 #[darling(default)]
 pub enum Expand {
     #[default]
-    Subset,
+    Entity,
     All,
 }
 
