@@ -6,7 +6,7 @@ use std::path::Path;
 use erased_serde::Serialize;
 use eyre::Result;
 
-use crate::{ExpandStrategy, PathElement, Persistable, ResolvablePath};
+use crate::{ExpandStrategy, PathElement, Persist, ResolvablePath};
 
 /// Persister handle how entity are actually persisted.
 pub trait Persister {
@@ -14,7 +14,7 @@ pub trait Persister {
     fn write<'a>(&self, path: &Path, serializable: Box<dyn Serialize + 'a>) -> Result<()>;
 
     /// Persists a [`Persistable`] and its children.
-    fn persist<P: Into<ResolvablePath>, T: Persistable>(
+    fn persist<P: Into<ResolvablePath>, T: Persist>(
         &self,
         base_path: P,
         persistable: &T,

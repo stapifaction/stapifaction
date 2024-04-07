@@ -1,11 +1,11 @@
-use persistable_input_receiver::expand_derive_persistable;
+use persist_input_receiver::expand_derive_persist;
 use proc_macro::TokenStream;
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use syn::{parse_macro_input, DeriveInput};
 
-mod persistable_input_receiver;
+mod persist_input_receiver;
 
-#[proc_macro_derive(Persistable, attributes(persistable, serde))]
+#[proc_macro_derive(Persist, attributes(persist, serde))]
 pub fn persistable(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -13,7 +13,7 @@ pub fn persistable(input: TokenStream) -> TokenStream {
     let serde_container = Container::from_ast(&cx, &input, Derive::Serialize)
         .expect("Failed to create Serde container");
 
-    let expanded = expand_derive_persistable(serde_container);
+    let expanded = expand_derive_persist(serde_container);
 
     cx.check().unwrap();
 

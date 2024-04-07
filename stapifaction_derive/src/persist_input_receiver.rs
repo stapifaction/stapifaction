@@ -7,17 +7,17 @@ use quote::{format_ident, quote};
 use serde_derive_internals::ast::{Container, Data};
 use syn::{Ident, Member, Type};
 
-pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
+pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
     let Container {
         ident,
         data,
         original,
         ..
     } = serde_container;
-    let PersistableInputReceiver {
+    let PersistInputReceiver {
         path,
         expand_strategy,
-    } = PersistableInputReceiver::from_derive_input(original).unwrap();
+    } = PersistInputReceiver::from_derive_input(original).unwrap();
 
     let container_ident = format_ident!("{}Container", ident);
 
@@ -134,7 +134,7 @@ pub fn expand_derive_persistable(serde_container: Container) -> TokenStream {
                 entity: &'a #ident,
             }
 
-            impl stapifaction::Persistable for #ident {
+            impl stapifaction::Persist for #ident {
                 fn path(&self) -> stapifaction::ResolvablePath {
                     #resolvable_path
                 }
@@ -212,14 +212,14 @@ fn is_option(ty: &Type) -> bool {
 }
 
 #[derive(Debug, FromDeriveInput)]
-#[darling(attributes(persistable), supports(struct_any))]
-pub struct PersistableInputReceiver {
+#[darling(attributes(persist), supports(struct_any))]
+pub struct PersistInputReceiver {
     pub path: Option<String>,
     pub expand_strategy: Option<ExpandStrategy>,
 }
 
 #[derive(Debug, FromField)]
-#[darling(attributes(persistable))]
+#[darling(attributes(persist))]
 pub struct PersistableField {
     pub ident: Option<Ident>,
     pub ty: Type,
@@ -260,22 +260,22 @@ mod tests {
     use darling::FromDeriveInput;
     use syn::parse_quote;
 
-    use crate::persistable_input_receiver::PersistableInputReceiver;
+    use crate::persist_input_receiver::PersistInputReceiver;
 
     #[test]
     fn test_persistable_entity() {
         let di = parse_quote! {
-            #[derive(Persistable)]
-            #[persistable(path = "users")]
+            #[derive(Persist)]
+            #[persist(path = "users")]
             pub struct User {
-                #[persistable(id)]
+                #[persist(id)]
                 user_name: String,
                 first_name: String,
                 last_name: String,
             }
         };
 
-        let receiver = PersistableInputReceiver::from_derive_input(&di).unwrap();
+        let receiver = PersistInputReceiver::from_derive_input(&di).unwrap();
 
         assert_eq!(receiver.path.unwrap(), "users");
     }
