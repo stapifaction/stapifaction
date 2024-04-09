@@ -6,7 +6,7 @@ use std::{
 use erased_serde::Serialize;
 use eyre::{Context, Result};
 
-use crate::Persistable;
+use crate::Persist;
 
 use super::Persister;
 
@@ -32,7 +32,7 @@ impl Persister for JsonPersister {
     }
 }
 
-pub trait ToJson: Persistable + Sized {
+pub trait ToJson: Persist + Sized {
     fn to_json<P: AsRef<Path>>(&self, base_path: P) -> Result<()> {
         let persister = JsonPersister;
 
@@ -42,7 +42,7 @@ pub trait ToJson: Persistable + Sized {
     }
 }
 
-impl<T: Persistable> ToJson for T {}
+impl<T: Persist> ToJson for T {}
 
 pub trait ToJsonIterable: IntoIterator + Sized
 where
