@@ -41,11 +41,15 @@ impl MockPersister {
 }
 
 impl Persister for MockPersister {
-    fn write<'a>(&self, path: &Path, _serializable: Box<dyn Serialize + 'a>) -> Result<()> {
+    fn serialize<'x>(&self, path: &Path, _serializable: Box<dyn Serialize + 'x>) -> Result<()> {
         if !self.paths.write().unwrap().insert(path.to_owned()) {
             panic!("The path '{}' has been added twice", path.display())
         }
 
         Ok(())
+    }
+
+    fn extension(&self) -> String {
+        String::from("json")
     }
 }

@@ -1,17 +1,21 @@
 #[cfg(feature = "json")]
 pub mod json;
 
-use std::path::Path;
+use std::{fs, path::Path};
 
-use erased_serde::Serialize;
-use eyre::Result;
+use erased_serde::Serialize as ErasedSerialize;
+use eyre::{Context, Result};
 
 use crate::{ExpandStrategy, PathElement, Persist, ResolvablePath};
 
 /// Persister handle how entity are actually persisted.
 pub trait Persister {
-    /// Writes an entity.
-    fn write<'a>(&self, path: &Path, serializable: Box<dyn Serialize + 'a>) -> Result<()>;
+    /// Serialize an entity.
+    fn serialize<'a>(&self, path: &Path, serializable: Box<dyn ErasedSerialize + 'a>)
+        -> Result<()>;
+
+    /// Gets the file extension.
+    fn extension(&self) -> String;
 
     /// Persists a [`Persistable`] and its children.
     fn persist<P: Into<ResolvablePath>, T: Persist>(
@@ -30,7 +34,16 @@ pub trait Persister {
                 .unwrap_or_default()
                 .resolve_path(&base_path, children.len());
 
-            self.write(&resolved_path, serializable)?;
+            if let Some(parent_path) = resolved_path.parent() {
+                fs::create_dir_all(parent_path)?;
+            }
+
+            let mut path = resolved_path.to_path_buf();
+
+            path.set_extension(self.extension());
+
+            self.serialize(&path, serializable)
+                .wrap_err_with(|| format!("Failed serialize element '{:?}'", path))?;
         }
 
         for (child_path, child) in children {
