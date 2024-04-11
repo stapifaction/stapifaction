@@ -1,4 +1,5 @@
 #[cfg(feature = "json")]
+/// m
 pub mod json;
 
 use std::{fs, path::Path};
@@ -8,7 +9,7 @@ use eyre::{Context, Result};
 
 use crate::{ExpandStrategy, PathElement, Persist, ResolvablePath};
 
-/// Persister handle how entity are actually persisted.
+/// Persister handle how entity are actually persisted on disk.
 pub trait Persister {
     /// Serialize an entity.
     fn serialize<'a>(&self, path: &Path, serializable: Box<dyn ErasedSerialize + 'a>)
