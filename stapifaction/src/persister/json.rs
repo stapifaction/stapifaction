@@ -13,15 +13,7 @@ use super::Persister;
 pub struct JsonPersister;
 
 impl Persister for JsonPersister {
-    fn write<'a>(&self, path: &Path, serializable: Box<dyn Serialize + 'a>) -> Result<()> {
-        if let Some(parent_path) = path.parent() {
-            fs::create_dir_all(parent_path)?;
-        }
-
-        let mut path = path.to_path_buf();
-
-        path.set_extension("json");
-
+    fn serialize<'a>(&self, path: &Path, serializable: Box<dyn Serialize + 'a>) -> Result<()> {
         let file = File::create(&path)
             .wrap_err_with(|| format!("Failed to create file '{}'", path.display()))?;
 
@@ -29,6 +21,10 @@ impl Persister for JsonPersister {
             .wrap_err_with(|| format!("Failed serialize element '{:?}'", path))?;
 
         Ok(())
+    }
+
+    fn extension(&self) -> String {
+        String::from("json")
     }
 }
 
