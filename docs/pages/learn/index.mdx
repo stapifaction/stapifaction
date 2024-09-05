@@ -1,0 +1,45 @@
+import Files from '../../components/files'
+
+# Getting started
+
+## Basic example
+
+Let's start by writing a very basic program persisiting a struct. In the
+following example, we use the default `json` feature to serialize the `User`
+struct to a JSON file, using [Serde].
+
+:::code-group
+```rust [basic.rs]
+// [!include ~/snippets/basic.rs]
+```
+
+<div data-title="Result">
+  <Files files={{".": ["data.json"]}} />
+</div>
+:::
+
+
+Running the code above will create a `./data.json` file. Have a look at the
+[supported Serde attributes] if you want to customize how structs are
+serialized.
+
+## Persist collections
+
+How about persisting not only a single struct but all item in a collection? Just add the
+`ToJsonIterable` trait in scope to add `to_json()` to collections. By default each collection
+item will be persisted using the index as the file name, but this can be customized with the
+`#[persistable(id)]` attribute on a struct field, as in the example below.
+
+
+:::code-group
+```rust [collection.rs]
+// [!include ~/snippets/collection.rs]
+```
+
+<div data-title="Result">
+  <Files files={{"users": ["ehdz.json", "ioeq.json", "wqpf.json"]}} />
+</div>
+:::
+
+[Serde]: https://serde.rs/
+[supported Serde attributes]: /learn/supported-serde-attributes
