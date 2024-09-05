@@ -8,6 +8,7 @@
     "preview": "vocs preview"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.7",
     "@types/react": "latest",
     "react": "latest",
     "react-dom": "latest",
