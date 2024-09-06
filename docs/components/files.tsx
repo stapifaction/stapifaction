@@ -17,7 +17,7 @@ const mapFiles = (files: Files): ReactElement => (
 
       return (
         <>
-          <div className="flex items-center"><Folder size={16} />&nbsp;{folder}</div>
+          <div className="flex items-center"><Folder size={20} />&nbsp;{folder}</div>
           <ul className="ml-4">
             {
               items.map(
@@ -35,6 +35,6 @@ const mapFiles = (files: Files): ReactElement => (
 
 const file = (name: string): ReactElement => (
   <>
-    <File size={16} />&nbsp;{name}
+    <File size={20} />&nbsp;{name}
   </>
 )
