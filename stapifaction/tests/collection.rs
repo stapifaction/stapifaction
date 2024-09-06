@@ -73,11 +73,11 @@ fn test_collection() {
     persister.persist("./", &product, None).unwrap();
 
     persister.assert([
-        PathBuf::from("./products/1/data"),
-        PathBuf::from("./products/1/factories/10"),
-        PathBuf::from("./products/1/factories/20"),
-        PathBuf::from("./products/1/factories/30"),
-        PathBuf::from("./products/1/orders/ZGFS"),
-        PathBuf::from("./products/1/orders/OJGD"),
+        PathBuf::from("./products/1/data.json"),
+        PathBuf::from("./products/1/factories/10.json"),
+        PathBuf::from("./products/1/factories/20.json"),
+        PathBuf::from("./products/1/factories/30.json"),
+        PathBuf::from("./products/1/orders/ZGFS.json"),
+        PathBuf::from("./products/1/orders/OJGD.json"),
     ])
 }
