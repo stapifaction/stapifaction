@@ -22,20 +22,24 @@ impl MockPersister {
     pub fn assert<S: Into<HashSet<PathBuf>>>(&self, expected_paths: S) {
         let expected_paths = expected_paths.into();
         let actual_paths = self.paths.read().unwrap();
+        let not_expected = actual_paths
+            .difference(&expected_paths)
+            .map(|p| p.to_str().unwrap())
+            .collect::<Vec<_>>();
+        let not_produced = expected_paths
+            .difference(&actual_paths)
+            .map(|p| p.to_str().unwrap())
+            .collect::<Vec<_>>();
 
-        assert_eq!(
-            HashSet::from([]),
-            actual_paths
-                .difference(&expected_paths)
-                .collect::<HashSet<&PathBuf>>(),
-            "These paths aren't expected"
+        assert!(
+            not_expected.is_empty(),
+            "These paths aren't expected: {}",
+            not_expected.join(", ")
         );
-        assert_eq!(
-            HashSet::from([]),
-            expected_paths
-                .difference(&actual_paths)
-                .collect::<HashSet<&PathBuf>>(),
-            "These expected paths weren't produced"
+        assert!(
+            not_produced.is_empty(),
+            "These expected paths weren't produced: {}",
+            not_produced.join(", ")
         );
     }
 }
