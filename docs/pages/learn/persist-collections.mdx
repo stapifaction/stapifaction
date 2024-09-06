@@ -1,0 +1,32 @@
+import Files from '../../components/files'
+
+# Persist collections
+
+It is also possible to persist all items in a collection. Just add the
+`ToJsonIterable` trait in scope that add the `to_json()` method to `Vec`.
+
+By default each collection item will be persisted using the index as the file
+name.
+
+:::code-group
+```rust [Code]
+// [!include ~/snippets/collections/basic.rs]
+```
+
+<div data-title="Result">
+  <Files files={{"users": ["0.json", "1.json", "2.json"]}} />
+</div>
+:::
+
+The `#[persist(id)]` attribute can be added on a struct field to use its value
+as the file name, as in the example below.
+
+:::code-group
+```rust [Code]
+// [!include ~/snippets/collections/id.rs]
+```
+
+<div data-title="Result">
+  <Files files={{"users": ["ehdz.json", "ioeq.json", "wqpf.json"]}} />
+</div>
+:::

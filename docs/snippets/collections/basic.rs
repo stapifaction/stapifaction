@@ -2,9 +2,7 @@ use stapifaction::Persistable;
 use stapifaction::json::ToJsonIterable;
 
 #[derive(Persistable)]
-#[persistable(path = "users")]
 struct User {
-    #[persistable(id)]
     pub id: String;
     pub first_name: String,
     pub last_name: String,

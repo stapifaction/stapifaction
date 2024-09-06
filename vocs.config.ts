@@ -1,7 +1,11 @@
 import { defineConfig } from 'vocs'
 
 export default defineConfig({
-  title: 'Docs',
+  title: 'Stapifaction',
+  logoUrl: {
+    light: '/logo-dark.png',
+    dark: '/logo-light.png'
+  },
   topNav: [
     {
       text: 'Learn',
@@ -16,6 +20,10 @@ export default defineConfig({
     {
       text: 'Getting Started',
       link: '/learn',
+    },
+    {
+      text: 'Persist collections',
+      link: '/learn/persist-collections',
     },
   ],
 })

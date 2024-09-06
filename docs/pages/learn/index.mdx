@@ -2,6 +2,27 @@ import Files from '../../components/files'
 
 # Getting started
 
+## Overview
+
+Stapifaction is a Rust library allowing to easily generate [static APIs],
+by just decorating your existing structs with `#[derive]` attributes.
+It works as a [Serde] superset to define how your structs are persisted
+on disk.
+
+## Installation
+
+Run the following Cargo command in your project directory:
+
+```sh
+cargo add stapifaction
+```
+
+Or add the following line to your Cargo.toml:
+
+```toml
+stapifaction = "0.0.2"
+```
+
 ## Basic example
 
 Let's start by writing a very basic program persisiting a struct. In the
@@ -9,7 +30,7 @@ following example, we use the default `json` feature to serialize the `User`
 struct to a JSON file, using [Serde].
 
 :::code-group
-```rust [basic.rs]
+```rust [Code]
 // [!include ~/snippets/basic.rs]
 ```
 
@@ -18,28 +39,11 @@ struct to a JSON file, using [Serde].
 </div>
 :::
 
-
 Running the code above will create a `./data.json` file. Have a look at the
 [supported Serde attributes] if you want to customize how structs are
 serialized.
 
-## Persist collections
 
-How about persisting not only a single struct but all item in a collection? Just add the
-`ToJsonIterable` trait in scope to add `to_json()` to collections. By default each collection
-item will be persisted using the index as the file name, but this can be customized with the
-`#[persistable(id)]` attribute on a struct field, as in the example below.
-
-
-:::code-group
-```rust [collection.rs]
-// [!include ~/snippets/collection.rs]
-```
-
-<div data-title="Result">
-  <Files files={{"users": ["ehdz.json", "ioeq.json", "wqpf.json"]}} />
-</div>
-:::
-
-[Serde]: https://serde.rs/
 [supported Serde attributes]: /learn/supported-serde-attributes
+[static APIs]: https://www.seancdavis.com/posts/lets-talk-about-static-apis/
+[Serde]: https://serde.rs/

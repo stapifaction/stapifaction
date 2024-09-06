@@ -6,11 +6,15 @@ import { HomePage } from 'vocs/components'
 
 <HomePage.Root>
   <HomePage.Logo />
-  <HomePage.Tagline>My Awesome Docs</HomePage.Tagline>
-  <HomePage.InstallPackage name="vocs" type="init" />
-  <HomePage.Description>This is a description of my documentation website.</HomePage.Description>
+  <HomePage.Tagline>Static APIs generator in Rust</HomePage.Tagline>
+  <HomePage.Description>
+    Stapifaction is a Rust library allowing to easily generate [static APIs],
+    by just decorating your existing structs with `#[derive]` attributes.
+    It works as a [Serde] superset to define how your structs are persisted
+    on disk.
+  </HomePage.Description>
   <HomePage.Buttons>
-    <HomePage.Button href="/getting-started" variant="accent">Get started</HomePage.Button>
-    <HomePage.Button href="https://github.com/wevm/vocs">GitHub</HomePage.Button>
+    <HomePage.Button href="/learn" variant="accent">Get started</HomePage.Button>
+    <HomePage.Button href="https://github.com/stapifaction/stapifaction">GitHub</HomePage.Button>
   </HomePage.Buttons>
 </HomePage.Root>
