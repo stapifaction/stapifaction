@@ -32,7 +32,7 @@ fn test_basic() {
 
     persister.persist("./", &user, None).unwrap();
 
-    persister.assert([PathBuf::from("./data")])
+    persister.assert([PathBuf::from("./data.json")])
 }
 
 #[test]
@@ -46,5 +46,5 @@ fn test_basic_with_id() {
 
     persister.persist("./", &order, None).unwrap();
 
-    persister.assert([PathBuf::from("./1")])
+    persister.assert([PathBuf::from("./1.json")])
 }

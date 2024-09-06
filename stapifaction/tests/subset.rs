@@ -43,8 +43,8 @@ fn test_subset_in_same_folder() {
     persister.persist("./", &user, None).unwrap();
 
     persister.assert([
-        PathBuf::from("./users/1/data"),
-        PathBuf::from("./users/1/address"),
+        PathBuf::from("./users/1/data.json"),
+        PathBuf::from("./users/1/address.json"),
     ])
 }
 
@@ -72,7 +72,7 @@ fn test_subset_in_separate_folders() {
         .unwrap();
 
     persister.assert([
-        PathBuf::from("./users/1/index"),
-        PathBuf::from("./users/1/address/index"),
+        PathBuf::from("./users/1/index.json"),
+        PathBuf::from("./users/1/address/index.json"),
     ])
 }
