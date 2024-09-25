@@ -3,9 +3,7 @@ use std::path::PathBuf;
 use serde::Serialize;
 use stapifaction::{Persist, Persister};
 
-use common::MockPersister;
-
-mod common;
+use crate::common::MockPersister;
 
 #[derive(Serialize, Persist)]
 #[persist(path = "products")]

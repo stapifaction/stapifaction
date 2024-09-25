@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 
-use common::MockPersister;
 use serde::Serialize;
 use stapifaction::{ExpandStrategy, Persist, Persister};
 
-mod common;
+use crate::common::MockPersister;
 
 #[derive(Serialize, Persist)]
 #[persist(path = "users")]
