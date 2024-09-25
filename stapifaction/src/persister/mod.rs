@@ -18,7 +18,7 @@ pub trait Persister {
     /// Gets the file extension.
     fn extension(&self) -> String;
 
-    /// Persists a [`Persistable`] and its children.
+    /// Persists a [`Persist`] and its children.
     fn persist<P: Into<ResolvablePath>, T: Persist>(
         &self,
         base_path: P,
