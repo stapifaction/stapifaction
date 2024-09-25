@@ -1,5 +1,5 @@
 #[cfg(feature = "json")]
-/// m
+/// Serialize to json.
 pub mod json;
 
 use std::{fs, path::Path};

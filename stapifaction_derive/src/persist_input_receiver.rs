@@ -5,7 +5,7 @@ use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use serde_derive_internals::ast::{Container, Data};
-use syn::{Ident, Member, Type};
+use syn::{Member, Type};
 
 pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
     let Container {
@@ -221,8 +221,6 @@ pub struct PersistInputReceiver {
 #[derive(Debug, FromField)]
 #[darling(attributes(persist))]
 pub struct PersistableField {
-    pub ident: Option<Ident>,
-    pub ty: Type,
     #[darling(default)]
     pub id: bool,
     pub expand: Option<Override<Expand>>,
