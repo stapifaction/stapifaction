@@ -1,6 +1,6 @@
 [package]
 name = "stapifaction_derive"
-version = "0.0.2"
+version = "0.1.0"
 edition = "2021"
 description = "Macros implementation of #[derive(Persistable)]."
 keywords = ["serde", "api"]
