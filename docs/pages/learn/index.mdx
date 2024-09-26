@@ -11,23 +11,18 @@ on disk.
 
 ## Installation
 
-Run the following Cargo command in your project directory:
-
-```sh
-cargo add stapifaction
-```
-
-Or add the following line to your Cargo.toml:
+Add the following line to your Cargo.toml:
 
 ```toml
-stapifaction = "0.0.2"
+stapifaction = { version = "0.1", features = ["json"] }
 ```
 
 ## Basic example
 
 Let's start by writing a very basic program persisiting a struct. In the
-following example, we use the default `json` feature to serialize the `User`
-struct to a JSON file, using [Serde].
+following example, with the `json` feature and `stapifaction::json::ToJson`
+in scope, you can call `to_json()` to serialize the `User` struct to a JSON
+file, using [Serde] behind the scenes.
 
 :::code-group
 ```rust [Code]
