@@ -1,4 +1,4 @@
-#[derive(Persistable)]
+#[derive(Persist)]
 struct User {
     #[persist(id)] // [!code ++]
     pub id: String;

@@ -1,6 +1,6 @@
-use stapifaction::Persistable;
+use stapifaction::{json::ToJson, Persist};
 
-#[derive(Persistable)]
+#[derive(Persist)]
 struct User {
     pub first_name: String,
     pub last_name: String,
