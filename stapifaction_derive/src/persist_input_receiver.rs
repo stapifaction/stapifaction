@@ -1,11 +1,11 @@
 use std::{borrow::Cow, collections::HashSet, hash::Hash};
 
-use darling::{util::Override, FromDeriveInput, FromField, FromMeta};
+use darling::{ast::NestedMeta, util::Override, FromDeriveInput, FromField, FromMeta};
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use serde_derive_internals::ast::{Container, Data};
-use syn::{Member, Type};
+use syn::{Expr, Lit, Member, Type};
 
 pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
     let Container {
@@ -14,10 +14,8 @@ pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
         original,
         ..
     } = serde_container;
-    let PersistInputReceiver {
-        path,
-        expand_strategy,
-    } = PersistInputReceiver::from_derive_input(original).unwrap();
+    let PersistInputReceiver { path, expand_as } =
+        PersistInputReceiver::from_derive_input(original).unwrap();
 
     let container_ident = format_ident!("{}Container", ident);
 
@@ -36,17 +34,7 @@ pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
             .partition::<Vec<_>, _>(|(_, f)| f.expand().is_none());
 
         let id = main_set.iter().find(|(_, f)| f.id).map(|(f, _)| &f.member);
-
-        let expand_strategy = expand_strategy.map(|expand_strategy| match expand_strategy {
-                ExpandStrategy::SeparateFolders => {
-                    quote! { Some(stapifaction::ExpandStrategy::entitiesInSeparateFolders(format!("index"))) }
-                }
-                ExpandStrategy::SameFolder => {
-                    quote! { Some(stapifaction::ExpandStrategy::entitiesGroupedInUniqueFolder(format!("data"))) }
-                }
-            }).unwrap_or_else(|| 
-                quote! { None }
-            );
+        let expand_strategy = TokenStream::from(expand_as);
 
         let (entities, collections) = others
             .into_iter()
@@ -215,7 +203,8 @@ fn is_option(ty: &Type) -> bool {
 #[darling(attributes(persist), supports(struct_any))]
 pub struct PersistInputReceiver {
     pub path: Option<String>,
-    pub expand_strategy: Option<ExpandStrategy>,
+    #[darling(default)]
+    pub expand_as: ExpandStrategy,
 }
 
 #[derive(Debug, FromField)]
@@ -246,11 +235,70 @@ pub enum Expand {
     All,
 }
 
-#[derive(Debug, Clone, Copy, FromMeta)]
-#[darling(rename_all = "kebab-case")]
+#[derive(Debug, Clone, Default, Eq, PartialEq)]
 pub enum ExpandStrategy {
-    SeparateFolders,
-    SameFolder,
+    SeparateFolders(Option<String>),
+    SameFolder(Option<String>),
+    #[default]
+    Inherited,
+}
+
+impl FromMeta for ExpandStrategy {
+    fn from_list(items: &[NestedMeta]) -> darling::Result<Self> {
+        let meta = items
+            .first()
+            .ok_or(darling::Error::missing_field("expand_as"))?;
+
+        match meta {
+            NestedMeta::Meta(meta) => match meta {
+                syn::Meta::Path(path) => match path.require_ident()?.to_string().as_str() {
+                    "separate_folders" => Ok(ExpandStrategy::SeparateFolders(None)),
+                    "same_folder" => Ok(ExpandStrategy::SameFolder(None)),
+                    other => Err(darling::Error::custom(format!(
+                        "The expand strategy '{other}' is not supported"
+                    ))),
+                },
+                syn::Meta::NameValue(meta_name_value) => {
+                    let value = match &meta_name_value.value {
+                        Expr::Lit(expr) => match &expr.lit {
+                            Lit::Str(lit_str) => Ok(lit_str.value()),
+                            _ => Err(darling::Error::custom(
+                                "This expand strategy value is not supported",
+                            )),
+                        },
+                        _ => Err(darling::Error::custom(
+                            "This expand strategy value is not supported",
+                        )),
+                    }?;
+                    match meta_name_value.path.require_ident()?.to_string().as_str() {
+                        "separate_folders" => Ok(ExpandStrategy::SeparateFolders(Some(value))),
+                        "same_folder" => Ok(ExpandStrategy::SameFolder(Some(value))),
+                        other => Err(darling::Error::custom(format!(
+                            "The expand strategy '{other}' is not supported"
+                        ))),
+                    }
+                }
+                _ => todo!(),
+            },
+            NestedMeta::Lit(_) => Err(darling::Error::custom("A literal is not supported here")),
+        }
+    }
+}
+
+impl From<ExpandStrategy> for TokenStream {
+    fn from(value: ExpandStrategy) -> Self {
+        match value {
+            ExpandStrategy::SeparateFolders(folder_name) => {
+                let folder_name = folder_name.unwrap_or(format!("index"));
+                quote! { Some(stapifaction::ExpandStrategy::entitiesInSeparateFolders(#folder_name)) }
+            }
+            ExpandStrategy::SameFolder(file_name) => {
+                let file_name = file_name.unwrap_or(format!("data"));
+                quote! { Some(stapifaction::ExpandStrategy::entitiesGroupedInUniqueFolder(#file_name)) }
+            }
+            ExpandStrategy::Inherited => quote! { None },
+        }
+    }
 }
 
 #[cfg(test)]
@@ -258,10 +306,10 @@ mod tests {
     use darling::FromDeriveInput;
     use syn::parse_quote;
 
-    use crate::persist_input_receiver::PersistInputReceiver;
+    use crate::persist_input_receiver::{ExpandStrategy, PersistInputReceiver};
 
     #[test]
-    fn test_persistable_entity() {
+    fn test_path() {
         let di = parse_quote! {
             #[derive(Persist)]
             #[persist(path = "users")]
@@ -276,5 +324,96 @@ mod tests {
         let receiver = PersistInputReceiver::from_derive_input(&di).unwrap();
 
         assert_eq!(receiver.path.unwrap(), "users");
+    }
+
+    #[test]
+    fn test_default_expand_strategy() {
+        let di = parse_quote! {
+            #[derive(Persist)]
+            pub struct User {
+                user_name: String,
+                first_name: String,
+                last_name: String,
+            }
+        };
+
+        let receiver = PersistInputReceiver::from_derive_input(&di).unwrap();
+
+        assert_eq!(receiver.expand_as, ExpandStrategy::Inherited)
+    }
+
+    #[test]
+    fn test_default_separate_folders() {
+        let di = parse_quote! {
+            #[derive(Persist)]
+            #[persist(expand_as(separate_folders))]
+            pub struct User {
+                user_name: String,
+                first_name: String,
+                last_name: String,
+            }
+        };
+
+        let receiver = PersistInputReceiver::from_derive_input(&di).unwrap();
+
+        assert_eq!(receiver.expand_as, ExpandStrategy::SeparateFolders(None))
+    }
+
+    #[test]
+    fn test_custom_separate_folders() {
+        let di = parse_quote! {
+            #[derive(Persist)]
+            #[persist(expand_as(separate_folders = "i"))]
+            pub struct User {
+                #[persist(id)]
+                user_name: String,
+                first_name: String,
+                last_name: String,
+            }
+        };
+
+        let receiver = PersistInputReceiver::from_derive_input(&di).unwrap();
+
+        assert_eq!(
+            receiver.expand_as,
+            ExpandStrategy::SeparateFolders(Some(String::from("i")))
+        )
+    }
+
+    #[test]
+    fn test_default_same_folder() {
+        let di = parse_quote! {
+            #[derive(Persist)]
+            #[persist(expand_as(same_folder))]
+            pub struct User {
+                user_name: String,
+                first_name: String,
+                last_name: String,
+            }
+        };
+
+        let receiver = PersistInputReceiver::from_derive_input(&di).unwrap();
+
+        assert_eq!(receiver.expand_as, ExpandStrategy::SameFolder(None))
+    }
+
+    #[test]
+    fn test_custom_same_folder() {
+        let di = parse_quote! {
+            #[derive(Persist)]
+            #[persist(expand_as(same_folder = "x"))]
+            pub struct User {
+                user_name: String,
+                first_name: String,
+                last_name: String,
+            }
+        };
+
+        let receiver = PersistInputReceiver::from_derive_input(&di).unwrap();
+
+        assert_eq!(
+            receiver.expand_as,
+            ExpandStrategy::SameFolder(Some(String::from("x")))
+        )
     }
 }
