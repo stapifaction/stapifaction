@@ -5,6 +5,7 @@
     clippy::missing_const_for_fn,
     rustdoc::all
 )]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 mod expand_strategy;
 mod path_element;
