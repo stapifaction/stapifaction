@@ -15,7 +15,7 @@ struct Product {
     #[persist(expand = "all")]
     #[serde(skip)]
     pub factories: Vec<Factory>,
-    #[persist(expand = "all")]
+    #[persist(expand = "entity")]
     #[serde(skip)]
     pub orders: Vec<Order>,
 }
@@ -75,7 +75,26 @@ fn test_collection() {
         PathBuf::from("./products/1/factories/10.json"),
         PathBuf::from("./products/1/factories/20.json"),
         PathBuf::from("./products/1/factories/30.json"),
-        PathBuf::from("./products/1/orders/ZGFS.json"),
-        PathBuf::from("./products/1/orders/OJGD.json"),
+        PathBuf::from("./products/1/orders.json"),
     ])
+}
+
+#[test]
+fn test_collection_in_single_file() {
+    let persister = MockPersister::new();
+
+    let orders = vec![
+        Order {
+            id: String::from("ZGFS"),
+            quantity: 5,
+        },
+        Order {
+            id: String::from("OJGD"),
+            quantity: 10,
+        },
+    ];
+
+    persister.persist("./", &orders, None).unwrap();
+
+    persister.assert([PathBuf::from("./data.json")])
 }

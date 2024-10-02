@@ -1,6 +1,7 @@
-use std::{borrow::Cow, path::PathBuf};
+use std::{borrow::Cow, iter::empty, path::PathBuf};
 
 use erased_serde::Serialize as ErasedSerialize;
+use serde::Serialize;
 
 use crate::{ExpandStrategy, ResolvablePath};
 
@@ -78,5 +79,26 @@ impl<'a> Persist for Child<'a> {
                 }))
             }
         }
+    }
+}
+
+impl<T> Persist for Vec<T>
+where
+    T: Serialize,
+{
+    fn path(&self) -> ResolvablePath {
+        ResolvablePath::default()
+    }
+
+    fn expand_strategy(&self) -> Option<ExpandStrategy> {
+        None
+    }
+
+    fn as_serializable<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>> {
+        Some(Box::new(self))
+    }
+
+    fn children<'e>(&'e self) -> Box<dyn Iterator<Item = (PathBuf, Cow<'e, Child<'e>>)> + 'e> {
+        Box::new(empty())
     }
 }
