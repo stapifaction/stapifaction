@@ -12,10 +12,10 @@ struct Product {
     pub id: u64,
     pub label: String,
     pub price: u64,
-    #[persist(expand = "all")]
+    #[persist(items)]
     #[serde(skip)]
     pub factories: Vec<Factory>,
-    #[persist(expand = "entity")]
+    #[persist]
     #[serde(skip)]
     pub orders: Vec<Order>,
 }
