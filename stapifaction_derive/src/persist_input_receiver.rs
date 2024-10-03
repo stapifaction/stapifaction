@@ -1,11 +1,11 @@
-use std::{borrow::Cow, collections::HashSet, hash::Hash};
+use std::{collections::HashSet, hash::Hash};
 
-use darling::{ast::NestedMeta, util::Override, FromDeriveInput, FromField, FromMeta};
+use darling::{ast::NestedMeta, FromAttributes, FromDeriveInput, FromMeta};
 use itertools::Itertools;
-use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use proc_macro2::{TokenStream, TokenTree};
+use quote::quote;
 use serde_derive_internals::ast::{Container, Data};
-use syn::{Expr, Lit, Member, Type};
+use syn::{AttrStyle, Expr, Lit, Member, Meta, Type};
 
 pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
     let Container {
@@ -17,13 +17,12 @@ pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
     let PersistInputReceiver { path, expand_as } =
         PersistInputReceiver::from_derive_input(original).unwrap();
 
-    let container_ident = format_ident!("{}Container", ident);
-
     if let Data::Struct(_, fields) = data {
         let fields = fields
             .into_iter()
             .map(|serde_field| {
-                PersistableField::from_field(serde_field.original).map(|f| (serde_field, f))
+                PersistableField::from_attributes(&serde_field.original.attrs)
+                    .map(|f| (serde_field, f))
             })
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
@@ -31,14 +30,14 @@ pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
         let (main_set, others) = fields
             .into_iter()
             .filter(|(f, p)| !f.attrs.skip_serializing() || p.expand.is_some())
-            .partition::<Vec<_>, _>(|(_, f)| f.expand().is_none());
+            .partition::<Vec<_>, _>(|(_, f)| f.expand.is_none());
 
         let id = main_set.iter().find(|(_, f)| f.id).map(|(f, _)| &f.member);
         let expand_strategy = TokenStream::from(expand_as);
 
         let (entities, collections) = others
             .into_iter()
-            .partition::<Vec<_>, _>(|(_, f)| matches!(*f.expand().unwrap(), Expand::Entity));
+            .partition::<Vec<_>, _>(|(_, f)| matches!(f.expand.unwrap(), Expand::Entity));
 
         let resolvable_path = quote! { stapifaction::ResolvablePath::default() };
 
@@ -118,10 +117,6 @@ pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
         }
 
         quote! {
-            struct #container_ident<'a> {
-                entity: &'a #ident,
-            }
-
             impl stapifaction::Persist for #ident {
                 fn path(&self) -> stapifaction::ResolvablePath {
                     #resolvable_path
@@ -207,32 +202,55 @@ pub struct PersistInputReceiver {
     pub expand_as: ExpandStrategy,
 }
 
-#[derive(Debug, FromField)]
-#[darling(attributes(persist))]
+#[derive(Debug, Default)]
 pub struct PersistableField {
-    #[darling(default)]
     pub id: bool,
-    pub expand: Option<Override<Expand>>,
+    pub expand: Option<Expand>,
 }
 
-impl PersistableField {
-    pub fn expand(&self) -> Option<Cow<'_, Expand>> {
-        match &self.expand {
-            Some(expand) => match expand {
-                Override::Explicit(value) => Some(Cow::Borrowed(value)),
-                Override::Inherit => Some(Cow::Owned(Expand::Entity)),
-            },
-            None => None,
+impl FromAttributes for PersistableField {
+    fn from_attributes(attrs: &[syn::Attribute]) -> darling::Result<Self> {
+        let mut field = PersistableField::default();
+
+        for attr in attrs {
+            if matches!(attr.style, AttrStyle::Outer) {
+                match &attr.meta {
+                    Meta::Path(path) => {
+                        if let Some(ident) = path.get_ident() {
+                            if ident == "persist" {
+                                field.expand = Some(Expand::Entity)
+                            }
+                        }
+                    }
+                    Meta::List(meta_list) => {
+                        if let Some(ident) = meta_list.path.get_ident() {
+                            if ident == "persist" {
+                                for token in meta_list.tokens.clone() {
+                                    if let TokenTree::Ident(ident) = token {
+                                        match ident.to_string().as_str() {
+                                            "id" => field.id = true,
+                                            "items" => field.expand = Some(Expand::Items),
+                                            _ => (),
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    _ => return Err(darling::Error::custom("Unexpected name-value pair")),
+                }
+            }
         }
+
+        Ok(field)
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, FromMeta)]
-#[darling(default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum Expand {
     #[default]
     Entity,
-    All,
+    Items,
 }
 
 #[derive(Debug, Clone, Default, Eq, PartialEq)]
