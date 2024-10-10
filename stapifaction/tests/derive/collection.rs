@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use serde::Serialize;
-use stapifaction::{Persist, Persister};
+use stapifaction::{ExpandStrategy, Persist, Persister};
 
 use crate::common::MockPersister;
 
@@ -68,7 +68,9 @@ fn test_collection() {
         ],
     };
 
-    persister.persist("./", &product, None).unwrap();
+    persister
+        .persist("./", &product, ExpandStrategy::default())
+        .unwrap();
 
     persister.assert([
         PathBuf::from("./products/1/data.json"),
@@ -94,7 +96,9 @@ fn test_collection_in_single_file() {
         },
     ];
 
-    persister.persist("./", &orders, None).unwrap();
+    persister
+        .persist("./", &orders, ExpandStrategy::default())
+        .unwrap();
 
     persister.assert([PathBuf::from("./data.json")])
 }

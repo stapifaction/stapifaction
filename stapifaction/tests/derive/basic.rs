@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use serde::Serialize;
-use stapifaction::{Persist, Persister};
+use stapifaction::{ExpandStrategy, Persist, Persister};
 
 use crate::common::MockPersister;
 
@@ -29,7 +29,9 @@ fn test_basic() {
         last_name: String::from("Doe"),
     };
 
-    persister.persist("./", &user, None).unwrap();
+    persister
+        .persist("./", &user, ExpandStrategy::default())
+        .unwrap();
 
     persister.assert([PathBuf::from("./data.json")])
 }
@@ -43,7 +45,9 @@ fn test_basic_with_id() {
         timestamp: 1703191863,
     };
 
-    persister.persist("./", &order, None).unwrap();
+    persister
+        .persist("./", &order, ExpandStrategy::default())
+        .unwrap();
 
     persister.assert([PathBuf::from("./1.json")])
 }

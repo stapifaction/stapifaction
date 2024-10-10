@@ -3,7 +3,7 @@ use std::{fs::File, path::Path};
 use erased_serde::Serialize;
 use eyre::{Context, Result};
 
-use crate::Persist;
+use crate::{ExpandStrategy, Persist};
 
 use super::Persister;
 
@@ -29,10 +29,10 @@ impl Persister for JsonPersister {
 /// Extension trait allowing to persist as JSON files.
 pub trait ToJson: Persist + Sized {
     /// Persists to JSON files at the given path.
-    fn to_json<P: AsRef<Path>>(&self, base_path: P) -> Result<()> {
+    fn to_json<P: AsRef<Path>>(&self, base_path: P, expand_strategy: ExpandStrategy) -> Result<()> {
         let persister = JsonPersister;
 
-        persister.persist(base_path.as_ref(), self, None)?;
+        persister.persist(base_path.as_ref(), self, expand_strategy)?;
 
         Ok(())
     }
@@ -46,9 +46,9 @@ where
     <Self as IntoIterator>::Item: ToJson,
 {
     /// Persists the collection to JSON files at the given path.
-    fn to_json<P: AsRef<Path>>(self, base_path: P) -> Result<()> {
+    fn to_json<P: AsRef<Path>>(self, base_path: P, expand_strategy: ExpandStrategy) -> Result<()> {
         self.into_iter()
-            .try_for_each(|p| p.to_json(base_path.as_ref()))?;
+            .try_for_each(|p| p.to_json(base_path.as_ref(), expand_strategy.clone()))?;
 
         Ok(())
     }

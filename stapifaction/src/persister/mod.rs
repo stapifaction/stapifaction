@@ -23,16 +23,14 @@ pub trait Persister {
         &self,
         base_path: P,
         persistable: &T,
-        expand_strategy: Option<ExpandStrategy>,
+        expand_strategy: ExpandStrategy,
     ) -> Result<()> {
-        let expand_strategy = expand_strategy.or(persistable.expand_strategy());
         let base_path = base_path.into().append_all(persistable.path());
         let children = persistable.children().collect::<Vec<_>>();
 
         if let Some(serializable) = persistable.as_serializable() {
             let resolved_path = expand_strategy
                 .clone()
-                .unwrap_or_default()
                 .resolve_path(&base_path, children.len());
 
             if let Some(parent_path) = resolved_path.parent() {
@@ -53,7 +51,7 @@ pub trait Persister {
                     .clone()
                     .append(PathElement::ChildQualifier(child_path)),
                 child.as_ref(),
-                child.expand_strategy().or(expand_strategy.clone()),
+                expand_strategy.clone(),
             )?;
         }
 

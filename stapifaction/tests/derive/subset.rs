@@ -39,7 +39,9 @@ fn test_subset_in_same_folder() {
         },
     };
 
-    persister.persist("./", &user, None).unwrap();
+    persister
+        .persist("./", &user, ExpandStrategy::default())
+        .unwrap();
 
     persister.assert([
         PathBuf::from("./users/1/data.json"),
@@ -66,7 +68,7 @@ fn test_subset_in_separate_folders() {
         .persist(
             "./",
             &user,
-            Some(ExpandStrategy::SeparateFolders(String::from("index"))),
+            ExpandStrategy::SeparateFolders(String::from("index")),
         )
         .unwrap();
 
