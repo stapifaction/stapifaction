@@ -1,11 +1,11 @@
 use serde::Serialize;
-use stapifaction::{json::ToJson, Persist};
+use stapifaction::{json::ToJson, ExpandStrategy, Persist};
 
 #[derive(Serialize, Persist)]
 struct Factory {
     pub name: String,
     #[serde(skip)]
-    #[persist(expand)]
+    #[persist]
     pub location: Address,
 }
 
@@ -28,5 +28,7 @@ fn main() {
         },
     };
 
-    factory.to_json("./factory").unwrap()
+    factory
+        .to_json("./factory", ExpandStrategy::default())
+        .unwrap()
 }

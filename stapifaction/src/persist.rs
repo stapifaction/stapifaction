@@ -3,14 +3,12 @@ use std::{borrow::Cow, iter::empty, path::PathBuf};
 use erased_serde::Serialize as ErasedSerialize;
 use serde::Serialize;
 
-use crate::{ExpandStrategy, ResolvablePath};
+use crate::ResolvablePath;
 
-/// Persistable defines how to persist a given entity.
+/// Defines how to persist a given entity.
 pub trait Persist {
     /// The path where the entity will be persisted.
     fn path(&self) -> ResolvablePath;
-    /// The strategy used to expand childrens.
-    fn expand_strategy(&self) -> Option<ExpandStrategy>;
     /// The entity that will be serialized.
     fn as_serializable<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>>;
     /// The entity children.
@@ -50,13 +48,6 @@ impl<'a> Persist for Child<'a> {
         }
     }
 
-    fn expand_strategy(&self) -> Option<ExpandStrategy> {
-        match self {
-            Child::Entity(entity) => entity.expand_strategy(),
-            Child::Collection(_) => None,
-        }
-    }
-
     fn as_serializable<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>> {
         match self {
             Child::Entity(entity) => entity.as_serializable(),
@@ -88,10 +79,6 @@ where
 {
     fn path(&self) -> ResolvablePath {
         ResolvablePath::default()
-    }
-
-    fn expand_strategy(&self) -> Option<ExpandStrategy> {
-        None
     }
 
     fn as_serializable<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>> {
