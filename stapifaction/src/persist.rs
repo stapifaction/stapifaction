@@ -3,12 +3,14 @@ use std::{borrow::Cow, iter::empty, path::PathBuf};
 use erased_serde::Serialize as ErasedSerialize;
 use serde::Serialize;
 
-use crate::ResolvablePath;
+use crate::{PathStyle, ResolvablePath};
 
 /// Defines how to persist a given entity.
 pub trait Persist {
     /// The path where the entity will be persisted.
     fn path(&self) -> ResolvablePath;
+    /// The style used to compute persistable field paths.
+    fn path_style(&self) -> Option<PathStyle>;
     /// The entity that will be serialized.
     fn as_serializable<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>>;
     /// The entity children.
@@ -48,6 +50,13 @@ impl<'a> Persist for Child<'a> {
         }
     }
 
+    fn path_style(&self) -> Option<PathStyle> {
+        match self {
+            Child::Entity(entity) => entity.path_style(),
+            Child::Collection(_) => None,
+        }
+    }
+
     fn as_serializable<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>> {
         match self {
             Child::Entity(entity) => entity.as_serializable(),
@@ -79,6 +88,10 @@ where
 {
     fn path(&self) -> ResolvablePath {
         ResolvablePath::default()
+    }
+
+    fn path_style(&self) -> Option<PathStyle> {
+        None
     }
 
     fn as_serializable<'e>(&'e self) -> Option<Box<dyn ErasedSerialize + 'e>> {

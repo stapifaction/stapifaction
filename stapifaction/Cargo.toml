@@ -22,7 +22,7 @@ erased-serde = "0.4"
 eyre = "0.6"
 
 [features]
-default = ["derive"]
+default = ["derive", "json"]
 
 derive = ["dep:stapifaction_derive"]
 json = ["dep:serde_json"]

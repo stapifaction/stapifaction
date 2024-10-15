@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use serde::Serialize;
-use stapifaction::{ExpandStrategy, Persist, Persister};
+use stapifaction::{PathStyle, Persist, Persister};
 
 use crate::common::MockPersister;
 
@@ -39,9 +39,7 @@ fn test_subset_in_same_folder() {
         },
     };
 
-    persister
-        .persist("./", &user, ExpandStrategy::default())
-        .unwrap();
+    persister.persist("./", &user, None).unwrap();
 
     persister.assert([
         PathBuf::from("./users/1/data.json"),
@@ -68,7 +66,7 @@ fn test_subset_in_separate_folders() {
         .persist(
             "./",
             &user,
-            ExpandStrategy::SeparateFolders(String::from("index")),
+            Some(PathStyle::SeparateFolders(String::from("index"))),
         )
         .unwrap();
 

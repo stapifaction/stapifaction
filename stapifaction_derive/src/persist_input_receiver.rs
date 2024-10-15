@@ -120,6 +120,10 @@ pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
                     #resolvable_path
                 }
 
+                fn path_style(&self) -> Option<stapifaction::PathStyle> {
+                    None
+                }
+
                 fn as_serializable<'e>(&'e self) -> Option<Box<dyn stapifaction::ErasedSerialize + 'e>> {
                     Some(Box::new(self) as Box<dyn stapifaction::ErasedSerialize>)
                 }
