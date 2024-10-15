@@ -14,7 +14,11 @@ pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
         original,
         ..
     } = serde_container;
-    let PersistInputReceiver { path } = PersistInputReceiver::from_derive_input(original).unwrap();
+    let PersistInputReceiver {
+        path,
+        file_name,
+        as_folders,
+    } = PersistInputReceiver::from_derive_input(original).unwrap();
 
     if let Data::Struct(_, fields) = data {
         let fields = fields
@@ -114,6 +118,19 @@ pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
             );
         }
 
+        let path_style = if as_folders {
+            let file_name = file_name.unwrap_or(format!("index"));
+            quote! {
+                Some(stapifaction::PathStyle::as_folders(#file_name))
+            }
+        } else {
+            file_name.map_or(quote! { None }, |file_name| {
+                quote! {
+                    Some(stapifaction::PathStyle::as_files(#file_name))
+                }
+            })
+        };
+
         quote! {
             impl stapifaction::Persist for #ident {
                 fn path(&self) -> stapifaction::ResolvablePath {
@@ -121,7 +138,7 @@ pub fn expand_derive_persist(serde_container: Container) -> TokenStream {
                 }
 
                 fn path_style(&self) -> Option<stapifaction::PathStyle> {
-                    None
+                    #path_style
                 }
 
                 fn as_serializable<'e>(&'e self) -> Option<Box<dyn stapifaction::ErasedSerialize + 'e>> {
@@ -196,6 +213,9 @@ fn is_option(ty: &Type) -> bool {
 #[darling(attributes(persist), supports(struct_any))]
 pub struct PersistInputReceiver {
     pub path: Option<String>,
+    pub file_name: Option<String>,
+    #[darling(default)]
+    pub as_folders: bool,
 }
 
 #[derive(Debug, Default)]

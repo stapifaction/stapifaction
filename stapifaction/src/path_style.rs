@@ -31,8 +31,8 @@ impl PathStyle {
     /// persisted to `.\address\index.json`.
     ///
     /// [`JsonPersister`]: stapifaction::JsonPersister
-    pub fn as_folders(file_name: String) -> Self {
-        Self::SeparateFolders(file_name)
+    pub fn as_folders(file_name: &str) -> Self {
+        Self::SeparateFolders(file_name.to_owned())
     }
 
     /// Compute the paths as files.
@@ -43,8 +43,8 @@ impl PathStyle {
     /// persisted to `.\factory.json`.
     ///
     /// [`JsonPersister`]: stapifaction::JsonPersister
-    pub fn as_files(file_name: String) -> Self {
-        Self::UniqueFolder(file_name)
+    pub fn as_files(file_name: &str) -> Self {
+        Self::UniqueFolder(file_name.to_owned())
     }
 
     /// Resolves a [`ResolvablePath`] to a [`PathBuf`].

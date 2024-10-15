@@ -32,7 +32,7 @@ pub trait ToJson: Persist + Sized {
     fn to_json<P: AsRef<Path>>(&self, base_path: P) -> Result<()> {
         let persister = JsonPersister;
 
-        persister.persist(base_path.as_ref(), self, self.path_style())?;
+        persister.persist(base_path.as_ref(), self, None)?;
 
         Ok(())
     }

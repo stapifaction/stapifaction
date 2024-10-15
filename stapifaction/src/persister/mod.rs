@@ -25,6 +25,7 @@ pub trait Persister {
         persistable: &T,
         path_style: Option<PathStyle>,
     ) -> Result<()> {
+        let path_style = path_style.or(persistable.path_style());
         let base_path = base_path.into().append_all(persistable.path());
         let children = persistable.children().collect::<Vec<_>>();
 
@@ -33,6 +34,8 @@ pub trait Persister {
                 .clone()
                 .unwrap_or_default()
                 .resolve_path(&base_path, children.len());
+
+            println!("resolved path: {resolved_path:?}");
 
             if let Some(parent_path) = resolved_path.parent() {
                 fs::create_dir_all(parent_path)?;
