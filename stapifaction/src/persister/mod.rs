@@ -35,8 +35,6 @@ pub trait Persister {
                 .unwrap_or_default()
                 .resolve_path(&base_path, children.len());
 
-            println!("resolved path: {resolved_path:?}");
-
             if let Some(parent_path) = resolved_path.parent() {
                 fs::create_dir_all(parent_path)?;
             }
