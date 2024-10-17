@@ -7,7 +7,7 @@ use std::{fs, path::Path};
 use erased_serde::Serialize as ErasedSerialize;
 use eyre::{Context, Result};
 
-use crate::{ExpandStrategy, PathElement, Persist, ResolvablePath};
+use crate::{PathElement, PathStyle, Persist, ResolvablePath};
 
 /// Persister handle how entity are actually persisted on disk.
 pub trait Persister {
@@ -23,14 +23,16 @@ pub trait Persister {
         &self,
         base_path: P,
         persistable: &T,
-        expand_strategy: ExpandStrategy,
+        path_style: Option<PathStyle>,
     ) -> Result<()> {
+        let path_style = path_style.or(persistable.path_style());
         let base_path = base_path.into().append_all(persistable.path());
         let children = persistable.children().collect::<Vec<_>>();
 
         if let Some(serializable) = persistable.as_serializable() {
-            let resolved_path = expand_strategy
+            let resolved_path = path_style
                 .clone()
+                .unwrap_or_default()
                 .resolve_path(&base_path, children.len());
 
             if let Some(parent_path) = resolved_path.parent() {
@@ -51,7 +53,7 @@ pub trait Persister {
                     .clone()
                     .append(PathElement::ChildQualifier(child_path)),
                 child.as_ref(),
-                expand_strategy.clone(),
+                child.path_style().or(path_style.clone()),
             )?;
         }
 

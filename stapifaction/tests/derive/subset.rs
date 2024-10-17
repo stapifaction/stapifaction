@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use serde::Serialize;
-use stapifaction::{ExpandStrategy, Persist, Persister};
+use stapifaction::{Persist, Persister};
 
 use crate::common::MockPersister;
 
@@ -9,6 +9,19 @@ use crate::common::MockPersister;
 #[persist(path = "users")]
 struct User {
     #[persist(id)]
+    pub id: String,
+    pub first_name: String,
+    pub last_name: String,
+    #[persist]
+    #[serde(skip)]
+    pub address: Address,
+}
+
+#[derive(Serialize, Persist)]
+#[persist(path = "customers")]
+#[persist(as_folders)]
+#[persist(file_name = "idx")]
+struct Customer {
     pub id: String,
     pub first_name: String,
     pub last_name: String,
@@ -39,9 +52,7 @@ fn test_subset_in_same_folder() {
         },
     };
 
-    persister
-        .persist("./", &user, ExpandStrategy::default())
-        .unwrap();
+    persister.persist("./", &user, None).unwrap();
 
     persister.assert([
         PathBuf::from("./users/1/data.json"),
@@ -53,7 +64,7 @@ fn test_subset_in_same_folder() {
 fn test_subset_in_separate_folders() {
     let persister = MockPersister::new();
 
-    let user = User {
+    let user = Customer {
         id: String::from("1"),
         first_name: String::from("John"),
         last_name: String::from("Doe"),
@@ -64,16 +75,10 @@ fn test_subset_in_separate_folders() {
         },
     };
 
-    persister
-        .persist(
-            "./",
-            &user,
-            ExpandStrategy::SeparateFolders(String::from("index")),
-        )
-        .unwrap();
+    persister.persist("./", &user, None).unwrap();
 
     persister.assert([
-        PathBuf::from("./users/1/index.json"),
-        PathBuf::from("./users/1/address/index.json"),
+        PathBuf::from("./customers/idx.json"),
+        PathBuf::from("./customers/address/idx.json"),
     ])
 }

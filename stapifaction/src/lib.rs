@@ -7,14 +7,14 @@
 )]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
-mod expand_strategy;
 mod path_element;
+mod path_style;
 mod persist;
 mod persister;
 mod resolvable_path;
 
-pub use expand_strategy::ExpandStrategy;
 pub use path_element::PathElement;
+pub use path_style::PathStyle;
 pub use persist::{Child, Persist};
 pub use persister::*;
 pub use resolvable_path::ResolvablePath;

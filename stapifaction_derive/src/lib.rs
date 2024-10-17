@@ -5,7 +5,7 @@ use syn::{parse_macro_input, DeriveInput};
 
 mod persist_input_receiver;
 
-#[proc_macro_derive(Persist, attributes(persist, serde))]
+#[proc_macro_derive(Persist, attributes(persist))]
 pub fn persistable(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 

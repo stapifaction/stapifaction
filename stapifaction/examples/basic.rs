@@ -1,5 +1,5 @@
 use serde::Serialize;
-use stapifaction::{json::ToJson, ExpandStrategy, Persist};
+use stapifaction::{json::ToJson, Persist};
 
 #[derive(Serialize, Persist)]
 struct User {
@@ -15,5 +15,5 @@ fn main() {
         last_name: String::from("Doe"),
     };
 
-    user.to_json("./user", ExpandStrategy::default()).unwrap()
+    user.to_json("./user").unwrap()
 }

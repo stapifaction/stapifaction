@@ -1,5 +1,5 @@
 use serde::Serialize;
-use stapifaction::{json::ToJsonIterable, ExpandStrategy, Persist};
+use stapifaction::{json::ToJsonIterable, Persist};
 
 #[derive(Serialize, Persist)]
 struct Order {
@@ -20,5 +20,5 @@ fn main() {
         },
     ];
 
-    orders.to_json("./orders", ExpandStrategy::default()).unwrap();
+    orders.to_json("./orders").unwrap();
 }

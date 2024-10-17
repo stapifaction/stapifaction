@@ -1,5 +1,5 @@
 use serde::Serialize;
-use stapifaction::{json::ToJson, ExpandStrategy, Persist};
+use stapifaction::{json::ToJson, Persist};
 
 #[derive(Serialize, Persist)]
 struct Factory {
@@ -29,6 +29,6 @@ fn main() {
     };
 
     factory
-        .to_json("./factory", ExpandStrategy::default())
+        .to_json("./factory")
         .unwrap()
 }
