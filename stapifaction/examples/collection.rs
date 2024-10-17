@@ -2,6 +2,7 @@ use serde::Serialize;
 use stapifaction::{json::ToJsonIterable, Persist};
 
 #[derive(Serialize, Persist)]
+#[persist(as_folders)]
 struct Order {
     #[persist(id)]
     pub id: String,
@@ -20,5 +21,5 @@ fn main() {
         },
     ];
 
-    orders.to_json("./orders").unwrap();
+    orders.items_to_json("./orders").unwrap();
 }

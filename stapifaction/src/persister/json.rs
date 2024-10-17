@@ -46,7 +46,7 @@ where
     <Self as IntoIterator>::Item: ToJson,
 {
     /// Persists the collection to JSON files at the given path.
-    fn to_json<P: AsRef<Path>>(self, base_path: P) -> Result<()> {
+    fn items_to_json<P: AsRef<Path>>(self, base_path: P) -> Result<()> {
         self.into_iter()
             .try_for_each(|p| p.to_json(base_path.as_ref()))?;
 
