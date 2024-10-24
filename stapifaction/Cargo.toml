@@ -22,7 +22,7 @@ erased-serde = "0.4"
 eyre = "0.6"
 
 [features]
-default = ["derive", "json"]
+default = ["derive"]
 
 derive = ["dep:stapifaction_derive"]
 json = ["dep:serde_json"]
@@ -42,6 +42,17 @@ doc-scrape-examples = true
 required-features = ["json"]
 
 [[example]]
+name = "collection_items"
+doc-scrape-examples = true
+required-features = ["json"]
+
+
+[[example]]
 name = "fields"
+doc-scrape-examples = true
+required-features = ["json"]
+
+[[example]]
+name = "path_style_with_attributes"
 doc-scrape-examples = true
 required-features = ["json"]

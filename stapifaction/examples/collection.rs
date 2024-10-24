@@ -1,12 +1,17 @@
 use serde::Serialize;
-use stapifaction::{json::ToJsonIterable, Persist};
+use stapifaction::{json::ToJson, Persist};
 
 #[derive(Serialize, Persist)]
-#[persist(as_folders)]
 struct Order {
-    #[persist(id)]
     pub id: String,
     pub quantity: u64,
+    #[persist]
+    pub address: Address,
+}
+
+#[derive(Serialize, Persist)]
+struct Address {
+    pub name: String,
 }
 
 fn main() {
@@ -14,12 +19,20 @@ fn main() {
         Order {
             id: String::from("ZGFS"),
             quantity: 5,
+            address: Address {
+                name: String::from("Seatle"),
+            },
         },
         Order {
             id: String::from("OJGD"),
             quantity: 10,
+            address: Address {
+                name: String::from("San Fransisco"),
+            },
         },
     ];
 
-    orders.items_to_json("./orders").unwrap();
+    // The orders Vec will be persisted as a single file, using the path style
+    // to specify the file name.
+    orders.to_json_with_path_style("./", "orders").unwrap();
 }

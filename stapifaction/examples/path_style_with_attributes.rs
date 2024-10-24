@@ -1,7 +1,9 @@
 use serde::Serialize;
-use stapifaction::{json::ToJson, PathStyle, Persist};
+use stapifaction::{json::ToJson, Persist};
 
 #[derive(Serialize, Persist)]
+#[persist(as_folders)]
+#[persist(file_name = "i")]
 struct Factory {
     pub name: String,
     #[serde(skip)]
@@ -28,7 +30,9 @@ fn main() {
         },
     };
 
-    factory
-        .to_json_with_path_style("./factory", PathStyle::as_folders("i"))
-        .unwrap()
+    // This will use the derive attributes on `Factory` to persist this struct
+    // as 2 files:
+    // * `./factory/i.json`
+    // * `./factory/location/i.json`
+    factory.to_json("./factory").unwrap()
 }
